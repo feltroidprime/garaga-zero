@@ -1,0 +1,9 @@
+cairo-lang==0.13.2a0
+protobuf==3.20.3
+inquirer
+pandas
+tabulate
+pyarrow
+pytest
+pre-commit
+garaga==0.13.2a0
