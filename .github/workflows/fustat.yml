@@ -28,12 +28,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.10.14
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
       - name: Setup repo
         run: make setup
       - name: Check cairo Formatting
@@ -44,4 +38,4 @@ jobs:
       - name: Run fustat programs
         run: |
           source venv/bin/activate
-          pytest tests/fustat_programs/test_fustat.py -n auto -s
+          pytest tests/fustat_programs/test_fustat.py -n auto -s -x

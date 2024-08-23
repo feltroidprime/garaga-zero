@@ -7,7 +7,7 @@ install_parallel() {
             # Linux
             if command -v apt-get >/dev/null; then
                 # Debian/Ubuntu
-                sudo apt-get install -y parallel
+                sudo apt-get update && sudo apt-get install -y parallel
             elif command -v dnf >/dev/null; then
                 # Fedora
                 sudo dnf install -y parallel
@@ -87,7 +87,9 @@ echo 'export PYTHONPYCACHEPREFIX="$PWD/venv/build/__pycache__"' >> venv/bin/acti
 echo "PROJECT_ROOT=$PWD" > .env
 echo "PYTHONPATH=$PWD/hydra" >> .env # For vscode python path when running in integrated terminal.
 source venv/bin/activate
-pip install -r tools/make/requirements.txt
+pip install uv
+uv pip compile pyproject.toml --output-file tools/make/requirements.txt -q
+uv pip install -r tools/make/requirements.txt
 
 # Install the commit hooks (black, isort)
 pre-commit install

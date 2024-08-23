@@ -1,0 +1,44 @@
+[project]
+name = "garaga-zero"
+version = "0.0.1"
+requires-python = ">=3.10,<3.11"
+
+dependencies = [
+"garaga>=0.13.2a0",
+"cairo-lang==0.13.2a0",
+"protobuf==3.20.3",
+"inquirer",
+"pandas",
+"tabulate",
+"pytest",
+"pre-commit",
+]
+
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+cache_dir = "build/.pytest_cache"
+testpaths = ["tests/hydra"]
+# addopts = "--tb=short --showlocals"
+asyncio_default_fixture_loop_scope = "function"  # Explicitly set the loop scope
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | \venv
+  | build
+  | dist
+)/
+'''

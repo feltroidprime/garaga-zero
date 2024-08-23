@@ -8,17 +8,8 @@ build:
 setup:
 	./tools/make/setup.sh
 
-bytecode-check:
-	./tools/make/bytecode_check.sh
-
-rewrite:
-	./tools/make/rewrite.sh
-
-steps:
-	./tools/make/steps.sh
-
-ci-e2e:
-	./tools/make/ci_e2e.sh
+ci-fustat:
+	./tools/make/ci_fustat.sh
 
 profile:
 	@echo "A script to select, run & profile one Cairo file."

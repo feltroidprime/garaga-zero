@@ -177,3 +177,4 @@ venv
 *.sage.py
 *.idea
 *.secrets
+tools/make/requirements.txt
