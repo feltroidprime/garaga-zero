@@ -82,10 +82,9 @@ if ! python3.10 -m venv venv; then
     exit 1
 fi
 
-echo 'export PYTHONPATH="$PWD/hydra:$PWD:$PYTHONPATH"' >> venv/bin/activate
+echo 'export PYTHONPATH="$PWD:$PYTHONPATH"' >> venv/bin/activate
 echo 'export PYTHONPYCACHEPREFIX="$PWD/venv/build/__pycache__"' >> venv/bin/activate
 echo "PROJECT_ROOT=$PWD" > .env
-echo "PYTHONPATH=$PWD/hydra" >> .env # For vscode python path when running in integrated terminal.
 source venv/bin/activate
 pip install uv
 uv pip compile pyproject.toml --output-file tools/make/requirements.txt -q

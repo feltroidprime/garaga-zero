@@ -16,7 +16,7 @@ from precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_circuit,
     get_DERIVE_POINT_FROM_X_circuit,
     get_SLOPE_INTERCEPT_SAME_POINT_circuit,
-    get_ACCUMULATE_EVAL_POINT_CHALLENGE_SIGNED_circuit,
+    get_ACC_EVAL_POINT_CHALLENGE_SIGNED_circuit,
     get_RHS_FINALIZE_ACC_circuit,
     get_EVAL_FUNCTION_CHALLENGE_DUPL_circuit,
     get_ADD_EC_POINT_circuit,
@@ -457,7 +457,7 @@ func msm{
     // Load circuits to compute LHS and RHS of ZK-ECIP equation.
     let (
         local acc_eval_pt_challenge_circuit: ModuloCircuit*
-    ) = get_ACCUMULATE_EVAL_POINT_CHALLENGE_SIGNED_circuit(curve_id);
+    ) = get_ACC_EVAL_POINT_CHALLENGE_SIGNED_circuit(curve_id);
 
     let (local rhs_finalize_acc_circuit: ModuloCircuit*) = get_RHS_FINALIZE_ACC_circuit(curve_id);
     let (

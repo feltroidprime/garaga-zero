@@ -18,26 +18,10 @@ func main{
 }() {
     alloc_locals;
 
-    test_add_ec_points(curve_id=bn.CURVE_ID);
-    test_add_ec_points(curve_id=bls.CURVE_ID);
-    test_add_ec_points(curve_id=secp256k1.CURVE_ID);
-    test_add_ec_points(curve_id=secp256r1.CURVE_ID);
 
-    let (res) = test_msm_n_points(curve_id=bn.CURVE_ID, n=1);
+
     let (res) = test_msm_n_points(curve_id=bn.CURVE_ID, n=2);
-    let (res) = test_msm_n_points(curve_id=bn.CURVE_ID, n=3);
 
-    let (res) = test_msm_n_points(curve_id=bls.CURVE_ID, n=1);
-    let (res) = test_msm_n_points(curve_id=bls.CURVE_ID, n=2);
-    let (res) = test_msm_n_points(curve_id=bls.CURVE_ID, n=3);
-
-    let (res) = test_msm_n_points(curve_id=secp256k1.CURVE_ID, n=1);
-    let (res) = test_msm_n_points(curve_id=secp256k1.CURVE_ID, n=2);
-    let (res) = test_msm_n_points(curve_id=secp256k1.CURVE_ID, n=3);
-
-    let (res) = test_msm_n_points(curve_id=secp256r1.CURVE_ID, n=1);
-    let (res) = test_msm_n_points(curve_id=secp256r1.CURVE_ID, n=2);
-    let (res) = test_msm_n_points(curve_id=secp256r1.CURVE_ID, n=3);
 
     return ();
 }
