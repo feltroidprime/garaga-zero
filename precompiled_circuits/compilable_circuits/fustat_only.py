@@ -173,7 +173,6 @@ class MultiMillerLoop(BaseEXTFCircuit):
             len(input) % 6 == 0
         ), f"Input length must be a multiple of 6, got {len(input)}"
         n_pairs = len(input) // 6
-        print(f"n_pairs = {n_pairs}")
         circuit = multi_miller_loop.MultiMillerLoopCircuit(
             f"multi_miller_loop_{n_pairs}",
             self.curve_id,

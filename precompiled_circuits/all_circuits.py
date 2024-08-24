@@ -2,10 +2,11 @@ from enum import Enum
 
 from garaga.definitions import CurveID
 from garaga.precompiled_circuits.compilable_circuits.base import (
+    BaseModuloCircuit,
     cairo1_tests_header,
     compilation_mode_to_file_header,
-    compile_circuit,
     format_cairo_files_in_parallel,
+    to_snake_case,
 )
 from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuits import (
     AccumulateEvalPointChallengeSignedCircuit,
@@ -29,90 +30,6 @@ from precompiled_circuits.compilable_circuits.fustat_only import (
     MultiMillerLoop,
     MultiPairingCheck,
 )
-
-# def build_selector_function(
-#     circuit_id: Enum,
-#     circuit_instance: BaseModuloCircuit,
-#     params: list[dict],
-#     compilation_mode: int,
-# ) -> str:
-#     if compilation_mode == 1:
-#         return []
-
-#     struct_name = circuit_instance.circuit.class_name
-#     selectors = []
-#     if circuit_instance.circuit.generic_circuit and params is None:
-#         selectors.append("")
-#     elif circuit_instance.circuit.generic_circuit and params is not None:
-#         param_name = list(params[0].keys())[0]
-#         selector_function = f"""
-#         func get_{circuit_id.name}_circuit(curve_id:felt, {param_name}:felt) -> (circuit:{struct_name}*){{
-#         tempvar offset = 2 * ({list(params[0].keys())[0]} - 1) + 1;
-#         jmp rel offset;
-#         """
-#         for param in params:
-#             selector_function += f"""
-#             jmp circuit_{param[param_name]};
-#             """
-
-#         for param in params:
-#             selector_function += f"""
-#             circuit_{param[param_name]}:
-#             let curve_id = [fp - 4];
-#             return get_{circuit_instance.name.upper()}_circuit(curve_id);
-#             """
-#         selector_function += "\n}\n"
-#         selectors.append(selector_function)
-#     else:
-#         if circuit_instance.generic_over_curve and params is not None:
-#             curve_name = CurveID(circuit_instance.curve_id).name
-#             param_name = list(params[0].keys())[0]
-#             selector_function_curve = f"""
-#         func get_{circuit_id.name}_circuit(curve_id:felt, {param_name}:felt) -> (circuit:{struct_name}*){{
-#             if (curve_id == bn.CURVE_ID) {{
-#                 return get_BN254_{circuit_id.name}_circuit({param_name});
-#             }}
-#             if (curve_id == bls.CURVE_ID) {{
-#                 return get_BLS12_381_{circuit_id.name}_circuit({param_name});
-#             }}
-#             return get_void_{to_snake_case(struct_name)}();
-#             }}\n
-#         """
-#             selectors.append(selector_function_curve)
-
-#             param_name = list(params[0].keys())[0]
-#             selector_function_param = f"""
-#             func get_{curve_name}_{circuit_id.name}_circuit({param_name}:felt) -> (circuit:{struct_name}*){{
-#         tempvar offset = 2 * ({list(params[0].keys())[0]} - 1) + 1;
-#             jmp rel offset;
-#             """
-#             for param in params:
-#                 selector_function_param += f"""
-#             jmp circuit_{param[param_name]};
-#             """
-
-#             for param in params:
-#                 selector_function_param += f"""
-#                 circuit_{param[param_name]}:
-#                 return get_{curve_name}_{circuit_id.name}_{param[param_name]}_circuit();
-#                 """
-#             selector_function_param += "\n}\n"
-#             selectors.append(selector_function_param)
-#         else:
-#             selector_function = f"""
-#             func get_{circuit_id.name}_circuit(curve_id:felt) -> (circuit:{struct_name}*){{
-#                 if (curve_id == bn.CURVE_ID) {{
-#                     return get_BN254_{circuit_id.name}_circuit();
-#                 }}
-#                 if (curve_id == bls.CURVE_ID) {{
-#                     return get_BLS12_381_{circuit_id.name}_circuit();
-#                 }}
-#                 return get_void_{to_snake_case(struct_name)}();
-#                 }}
-#                 """
-#             selectors.append(selector_function)
-
-#     return selectors
 
 
 class CircuitID(Enum):
@@ -165,8 +82,7 @@ def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
             (circuit_id.bit_length() + 7) // 8, "big"
         ).decode()
 
-        print(f"trying to find best circuit id from {circuit_name}")
-        # find the best match  circuit id from the name, using a scoring algo, case insensitive:
+        # print(f"trying to find best circuit id from {circuit_name}")
         best_match = None
         best_score = -1
         for circuit_id in CircuitID:
@@ -176,7 +92,7 @@ def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
             if score > best_score:
                 best_score = score
                 best_match = circuit_id
-        print(f"best match = {best_match}")
+        # print(f"best match = {best_match}")
         return best_match
 
 
@@ -271,10 +187,139 @@ ALL_FUSTAT_CIRCUITS = {
 }
 
 
+def build_selector_function(
+    circuit_id: Enum,
+    circuit_instances: list[BaseModuloCircuit],
+    params: list[dict],
+) -> str:
+
+    struct_name = circuit_instances[0].circuit.class_name
+    selectors = []
+    if circuit_instances[0].circuit.generic_circuit and params is None:
+        selectors.append("")
+    elif circuit_instances[0].circuit.generic_circuit and params is not None:
+        param_name = list(params[0].keys())[0]
+        selector_function = f"""
+        func get_{circuit_id.name}_circuit(curve_id:felt, {param_name}:felt) -> (circuit:{struct_name}*){{
+        tempvar offset = 2 * ({list(params[0].keys())[0]} - 1) + 1;
+        jmp rel offset;
+        """
+        for param in params:
+            selector_function += f"""
+            jmp circuit_{param[param_name]};
+            """
+
+        for circuit_instance, param in zip(circuit_instances, params):
+            # print(f"param = {param}, circuit_instance.name = {circuit_instance.name}")
+            selector_function += f"""
+            circuit_{param[param_name]}:
+            let curve_id = [fp - 4];
+            return get_{circuit_instance.name.upper()}_circuit(curve_id);
+            """
+        selector_function += "\n}\n"
+        selectors.append(selector_function)
+    else:
+        if circuit_instances[0].generic_over_curve and params is not None:
+            curve_name = CurveID(circuit_instances[0].curve_id).name
+            param_name = list(params[0].keys())[0]
+            selector_function_curve = f"""
+        func get_{circuit_id.name}_circuit(curve_id:felt, {param_name}:felt) -> (circuit:{struct_name}*){{
+            if (curve_id == bn.CURVE_ID) {{
+                return get_BN254_{circuit_id.name}_circuit({param_name});
+            }}
+            if (curve_id == bls.CURVE_ID) {{
+                return get_BLS12_381_{circuit_id.name}_circuit({param_name});
+            }}
+            return get_void_{to_snake_case(struct_name)}();
+            }}\n
+        """
+            selectors.append(selector_function_curve)
+
+            param_name = list(params[0].keys())[0]
+            selector_function_param = f"""
+            func get_{curve_name}_{circuit_id.name}_circuit({param_name}:felt) -> (circuit:{struct_name}*){{
+        tempvar offset = 2 * ({list(params[0].keys())[0]} - 1) + 1;
+            jmp rel offset;
+            """
+            for param in params:
+                selector_function_param += f"""
+            jmp circuit_{param[param_name]};
+            """
+
+            for circuit_instance, param in zip(circuit_instances, params):
+                # print(
+                #     f"param = {param}, circuit_instance.name = {circuit_instance.name}"
+                # )
+                selector_function_param += f"""
+                circuit_{param[param_name]}:
+                return get_{circuit_instance.name.upper()}_circuit();
+                """
+            selector_function_param += "\n}\n"
+            selectors.append(selector_function_param)
+        else:
+            selector_function = f"""
+            func get_{circuit_id.name}_circuit(curve_id:felt) -> (circuit:{struct_name}*){{
+                if (curve_id == bn.CURVE_ID) {{
+                    return get_BN254_{circuit_id.name}_circuit();
+                }}
+                if (curve_id == bls.CURVE_ID) {{
+                    return get_BLS12_381_{circuit_id.name}_circuit();
+                }}
+                return get_void_{to_snake_case(struct_name)}();
+                }}
+                """
+            selectors.append(selector_function)
+
+    return selectors
+
+
+def compile_circuit(
+    curve_id: CurveID,
+    circuit_class: BaseModuloCircuit,
+    circuit_id: Enum,
+    params: list[dict],
+    compilation_mode: int,
+) -> tuple[list[str], str]:
+    # print(
+    #     f"Compiling {curve_id.name}:{circuit_class.__name__} {f'with params {params}' if params else ''}..."
+    # )
+
+    circuits: list[BaseModuloCircuit] = []
+    compiled_circuits: list[str] = []
+
+    if params is None:
+        circuit_instance = circuit_class(
+            curve_id=curve_id.value, compilation_mode=compilation_mode
+        )
+        circuits.append(circuit_instance)
+    else:
+        for param in params:
+            circuit_instance = circuit_class(
+                curve_id=curve_id.value, compilation_mode=compilation_mode, **param
+            )
+            circuits.append(circuit_instance)
+
+    selector_function = build_selector_function(circuit_id, circuits, params)
+
+    for i, circuit_instance in enumerate(circuits):
+        function_name = (
+            f"{circuit_instance.name.upper()}"
+            if circuit_instance.circuit.generic_circuit
+            else f"{curve_id.name}_{circuit_instance.name.upper()}"
+        )
+        compiled_circuit, _ = circuit_instance.circuit.compile_circuit(
+            function_name=function_name
+        )
+
+        compiled_circuits.append(compiled_circuit)
+
+    return compiled_circuits, selector_function
+
+
 def main(
     PRECOMPILED_CIRCUITS_DIR: str,
     CIRCUITS_TO_COMPILE: dict[CircuitID, dict],
-    compilation_mode: int = 1,
+    compilation_mode: int = 0,
 ):
     """Compiles and writes all circuits to .cairo files"""
 
@@ -303,20 +348,15 @@ def main(
             "curve_ids", [CurveID.BN254, CurveID.BLS12_381]
         ):
             filename_key = circuit_info["filename"]
-            compiled_circuits, selectors, full_function_names = compile_circuit(
+            compiled_circuits, selectors = compile_circuit(
                 curve_id,
                 circuit_info["class"],
                 circuit_id,
                 circuit_info["params"],
                 compilation_mode,
-                cairo1_tests_functions,
-                filename_key,
             )
             codes[filename_key].update(compiled_circuits)
             selector_functions[filename_key].update(selectors)
-            if compilation_mode == 1:
-
-                cairo1_full_function_names[filename_key].update(full_function_names)
 
     # Write selector functions and compiled circuit codes to their respective files
     print(f"Writing circuits and selectors to .cairo files...")
