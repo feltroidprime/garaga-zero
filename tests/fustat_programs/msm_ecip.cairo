@@ -18,10 +18,7 @@ func main{
 }() {
     alloc_locals;
 
-
-
     let (res) = test_msm_n_points(curve_id=bn.CURVE_ID, n=2);
-
 
     return ();
 }
