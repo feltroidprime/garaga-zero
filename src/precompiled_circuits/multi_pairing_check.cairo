@@ -18,10 +18,10 @@ func get_BLS12_381_MULTI_PAIRING_CHECK_circuit(n_pairs: felt) -> (
     jmp circuit_3;
 
     circuit_2:
-    return get_MULTI_MILLER_LOOP_circuit();
+    return get_BLS12_381_MULTI_PAIRING_CHECK_2_circuit();
 
     circuit_3:
-    return get_MULTI_MILLER_LOOP_circuit();
+    return get_BLS12_381_MULTI_PAIRING_CHECK_3_circuit();
 }
 
 func get_BN254_MULTI_PAIRING_CHECK_circuit(n_pairs: felt) -> (
@@ -35,10 +35,10 @@ func get_BN254_MULTI_PAIRING_CHECK_circuit(n_pairs: felt) -> (
     jmp circuit_3;
 
     circuit_2:
-    return get_MULTI_MILLER_LOOP_circuit();
+    return get_BN254_MULTI_PAIRING_CHECK_2_circuit();
 
     circuit_3:
-    return get_MULTI_MILLER_LOOP_circuit();
+    return get_BN254_MULTI_PAIRING_CHECK_3_circuit();
 }
 
 func get_MULTI_PAIRING_CHECK_circuit(curve_id: felt, n_pairs: felt) -> (
@@ -53,7 +53,7 @@ func get_MULTI_PAIRING_CHECK_circuit(curve_id: felt, n_pairs: felt) -> (
     return get_void_extension_field_modulo_circuit();
 }
 
-func get_BLS12_381_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
+func get_BLS12_381_MULTI_PAIRING_CHECK_2_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (constants_ptr: felt*) = get_label_location(constants_ptr_loc);
@@ -71,7 +71,7 @@ func get_BLS12_381_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModulo
     let mul_mod_n = 4281;
     let n_assert_eq = 273;
     let N_Euclidean_equations = 36;
-    let name = 'multi_miller_loop';
+    let name = 'multi_pairing_check_2';
     let curve_id = 1;
     local circuit: ExtensionFieldModuloCircuit = ExtensionFieldModuloCircuit(
         constants_ptr,
@@ -26726,7 +26726,7 @@ func get_BLS12_381_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModulo
     dw 2602;
 }
 
-func get_BLS12_381_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
+func get_BLS12_381_MULTI_PAIRING_CHECK_3_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (constants_ptr: felt*) = get_label_location(constants_ptr_loc);
@@ -26744,7 +26744,7 @@ func get_BLS12_381_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModulo
     let mul_mod_n = 6079;
     let n_assert_eq = 409;
     let N_Euclidean_equations = 36;
-    let name = 'multi_miller_loop';
+    let name = 'multi_pairing_check_3';
     let curve_id = 1;
     local circuit: ExtensionFieldModuloCircuit = ExtensionFieldModuloCircuit(
         constants_ptr,
@@ -64754,7 +64754,7 @@ func get_BLS12_381_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModulo
     dw 2638;
 }
 
-func get_BN254_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
+func get_BN254_MULTI_PAIRING_CHECK_2_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (constants_ptr: felt*) = get_label_location(constants_ptr_loc);
@@ -64772,7 +64772,7 @@ func get_BN254_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCirc
     let mul_mod_n = 5933;
     let n_assert_eq = 353;
     let N_Euclidean_equations = 54;
-    let name = 'multi_miller_loop';
+    let name = 'multi_pairing_check_2';
     let curve_id = 0;
     local circuit: ExtensionFieldModuloCircuit = ExtensionFieldModuloCircuit(
         constants_ptr,
@@ -101222,7 +101222,7 @@ func get_BN254_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCirc
     dw 3898;
 }
 
-func get_BN254_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
+func get_BN254_MULTI_PAIRING_CHECK_3_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (constants_ptr: felt*) = get_label_location(constants_ptr_loc);
@@ -101240,7 +101240,7 @@ func get_BN254_MULTI_MILLER_LOOP_circuit() -> (circuit: ExtensionFieldModuloCirc
     let mul_mod_n = 8309;
     let n_assert_eq = 529;
     let N_Euclidean_equations = 54;
-    let name = 'multi_miller_loop';
+    let name = 'multi_pairing_check_3';
     let curve_id = 0;
     local circuit: ExtensionFieldModuloCircuit = ExtensionFieldModuloCircuit(
         constants_ptr,

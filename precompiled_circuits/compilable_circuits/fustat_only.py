@@ -199,7 +199,11 @@ class MultiPairingCheck(BaseEXTFCircuit):
     ):
         self.n_pairs = n_pairs
         super().__init__(
-            f"multi_miller_loop", 6 * n_pairs, curve_id, auto_run, compilation_mode
+            f"multi_pairing_check_{n_pairs}",
+            6 * n_pairs,
+            curve_id,
+            auto_run,
+            compilation_mode,
         )
         self.generic_over_curve = True
 
@@ -217,7 +221,7 @@ class MultiPairingCheck(BaseEXTFCircuit):
         n_pairs = len(input) // 6
         assert n_pairs >= 2, f"n_pairs must be >= 2, got {n_pairs}"
         circuit = multi_pairing_check.MultiPairingCheckCircuit(
-            self.name,
+            f"multi_pairing_check_{n_pairs}",
             self.curve_id,
             n_pairs=n_pairs,
             hash_input=True,

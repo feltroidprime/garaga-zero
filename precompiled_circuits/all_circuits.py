@@ -252,7 +252,7 @@ def build_selector_function(
                 # )
                 selector_function_param += f"""
                 circuit_{param[param_name]}:
-                return get_{circuit_instance.name.upper()}_circuit();
+                return get_{CurveID(circuit_instance.curve_id).name}_{circuit_instance.name.upper()}_circuit();
                 """
             selector_function_param += "\n}\n"
             selectors.append(selector_function_param)

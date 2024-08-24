@@ -23,4 +23,13 @@ else
     directories="./src ./tests/fustat_programs"
 fi
 
-find $directories -name "*.cairo" | parallel process_cairo_file
+# Find all .cairo files and process them in parallel
+# Using --halt soon,fail=1 to stop at the first failure
+find $directories -name "*.cairo" | parallel --halt soon,fail=1 process_cairo_file
+
+# Capture the exit status of parallel
+exit_status=$?
+
+# Exit with the captured status
+echo "Parallel execution exited with status: $exit_status"
+exit $exit_status

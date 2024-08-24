@@ -20,13 +20,13 @@ func get_BLS12_381_MULTI_MILLER_LOOP_circuit(n_pairs: felt) -> (
     jmp circuit_3;
 
     circuit_1:
-    return get_MULTI_MILLER_LOOP_1_circuit();
+    return get_BLS12_381_MULTI_MILLER_LOOP_1_circuit();
 
     circuit_2:
-    return get_MULTI_MILLER_LOOP_2_circuit();
+    return get_BLS12_381_MULTI_MILLER_LOOP_2_circuit();
 
     circuit_3:
-    return get_MULTI_MILLER_LOOP_3_circuit();
+    return get_BLS12_381_MULTI_MILLER_LOOP_3_circuit();
 }
 
 func get_BN254_MULTI_MILLER_LOOP_circuit(n_pairs: felt) -> (circuit: ExtensionFieldModuloCircuit*) {
@@ -40,13 +40,13 @@ func get_BN254_MULTI_MILLER_LOOP_circuit(n_pairs: felt) -> (circuit: ExtensionFi
     jmp circuit_3;
 
     circuit_1:
-    return get_MULTI_MILLER_LOOP_1_circuit();
+    return get_BN254_MULTI_MILLER_LOOP_1_circuit();
 
     circuit_2:
-    return get_MULTI_MILLER_LOOP_2_circuit();
+    return get_BN254_MULTI_MILLER_LOOP_2_circuit();
 
     circuit_3:
-    return get_MULTI_MILLER_LOOP_3_circuit();
+    return get_BN254_MULTI_MILLER_LOOP_3_circuit();
 }
 
 func get_MULTI_MILLER_LOOP_circuit(curve_id: felt, n_pairs: felt) -> (
