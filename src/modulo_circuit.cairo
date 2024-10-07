@@ -74,9 +74,9 @@ func run_modulo_circuit{
         circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
         # Convert the int value back to a string and print it
         circuit_name = ids.circuit.name.to_bytes((ids.circuit.name.bit_length() + 7) // 8, 'big').decode()
-        print(f"circuit.name = {circuit_name}")
+        # print(f"circuit.name = {circuit_name}")
         circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
-        print(f"best_match = {circuit_id.name}")
+        # print(f"best_match = {circuit_id.name}")
         MOD_CIRCUIT = ALL_FUSTAT_CIRCUITS[circuit_id]['class'](ids.circuit.curve_id, auto_run=False)
         MOD_CIRCUIT = MOD_CIRCUIT.run_circuit(circuit_input)
 
