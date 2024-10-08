@@ -39,6 +39,12 @@ from utils import (
     hash_full_transcript_and_get_Z,
 )
 
+// Checks if a given point is on the G1 curve for the specified curve_id
+// Parameters:
+//   curve_id: The ID of the elliptic curve
+//   point: The G1Point to check
+// Returns:
+//   res: 1 if the point is on the curve, 0 otherwise
 func is_on_curve_g1{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, point: G1Point) -> (res: felt) {
@@ -56,6 +62,13 @@ func is_on_curve_g1{
     let (check_g1: felt) = is_zero_mod_P([cast(output, UInt384*)], P);
     return (res=check_g1);
 }
+
+// Checks if given points are on both G1 and G2 curves for the specified curve_id
+// Parameters:
+//   curve_id: The ID of the elliptic curve
+//   input: Pointer to an array of felt* containing the coordinates of G1 and G2 points
+// Returns:
+//   res: 1 if all points are on their respective curves, 0 otherwise
 func is_on_curve_g1_g2{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, input: felt*) -> (res: felt) {
@@ -90,7 +103,13 @@ func is_on_curve_g1_g2{
     return (res=1);
 }
 
-// Negate a G1Point by inversing y. This can be achieved by computing -P.y = CURVE_P - P.y
+// Negate a G1Point by inverting its y-coordinate
+// This is achieved by computing -P.y = CURVE_P - P.y
+// Parameters:
+//   p: The G1Point to negate
+//   curve_id: The ID of the elliptic curve being used
+// Returns:
+//   res: The negated G1Point
 func negate_point{
     range_check96_ptr: felt*
 }(p: G1Point, curve_id: felt) -> (res: G1Point) {
@@ -98,12 +117,13 @@ func negate_point{
     let (CURVE_P) = get_P(curve_id);
     let borrow = 0;
 
+    // Perform subtraction CURVE_P - p.y for each limb
     let (d0, borrow) = subtract_limb(CURVE_P.d0, p.y.d0);
     let (d1, borrow) = subtract_limb(CURVE_P.d1, p.y.d1 + borrow);
     let (d2, borrow) = subtract_limb(CURVE_P.d2, p.y.d2 + borrow);
     let (d3, _) = subtract_limb(CURVE_P.d3, p.y.d3 + borrow);
 
-    // Compute -y mod P
+    // Construct the negated y-coordinate
     let neg_y = UInt384(
         d0=d0,
         d1=d1,
@@ -111,10 +131,17 @@ func negate_point{
         d3=d3,
     );
 
+    // Return the negated point (x coordinate remains the same)
     return (res=G1Point(x=p.x, y=neg_y));
 }
 
-// Subtract two limbs, with overflow/underflow checks
+// Subtract two limbs, returning the result and the borrow
+// This function handles the subtraction of individual limbs in the UInt384 representation
+// Parameters:
+//   x: The minuend (number being subtracted from)
+//   y: The subtrahend (number being subtracted)
+// Returns:
+//   (result, borrow): The result of the subtraction and the borrow bit
 func subtract_limb{
     range_check96_ptr: felt*
 }(x: felt, y: felt) -> (felt, felt) {
@@ -125,7 +152,7 @@ func subtract_limb{
     if (is_underflow != 0) {
         assert [range_check96_ptr] = y - x;
         tempvar range_check96_ptr = range_check96_ptr + 1;
-        // Correct underflow
+        // Correct underflow by adding BASE (2^96)
         let limb_result = (x + BASE) - y;
         return (limb_result, 1);  // borrow 1
     } else {
@@ -135,33 +162,55 @@ func subtract_limb{
     }
 }
 
-// Subtract two EC points. Doesn't check if the inputs are on curve nor if they are the point at infinity.
+// Subtract two EC points
+// This function doesn't check if the inputs are on the curve or if they are the point at infinity
+// Parameters:
+//   curve_id: The ID of the elliptic curve being used
+//   p: The first G1Point (minuend)
+//   q: The second G1Point (subtrahend)
+// Returns:
+//   res: The result of p - q as a G1Point
 func sub_ec_points{range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(curve_id: felt, p: G1Point, q: G1Point) -> (res: G1Point) {
     alloc_locals;
+    // Negate the second point
     let (neg_Q) = negate_point(q, curve_id);
+    // Add the first point to the negated second point
     let (result) = add_ec_points(curve_id, p, neg_Q);
     return (res=result);
 }
 
-// Add two EC points. Doesn't check if the inputs are on curve nor if they are the point at infinity.
+// Add two elliptic curve points P and Q on the curve specified by curve_id.
+// It does not check if the input points are on the curve or if they are the point at infinity.
+// Parameters:
+//   curve_id: The ID of the elliptic curve being used
+//   P: The first point to add (G1Point)
+//   Q: The second point to add (G1Point)
+// Returns:
+//   res: The resulting point after addition (G1Point)
 func add_ec_points{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, P: G1Point, Q: G1Point) -> (res: G1Point) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (local modulus: UInt384) = get_P(curve_id);
+    
+    // Check if P and Q have the same x-coordinate
     let (same_x) = is_zero_mod_P(
         UInt384(P.x.d0 - Q.x.d0, P.x.d1 - Q.x.d1, P.x.d2 - Q.x.d2, P.x.d3 - Q.x.d3), modulus
     );
 
     if (same_x != 0) {
+        // P and Q have the same x-coordinate
+        // Check if they have opposite y-coordinates (P = -Q)
         let (opposite_y) = is_zero_mod_P(
             UInt384(P.y.d0 + Q.y.d0, P.y.d1 + Q.y.d1, P.y.d2 + Q.y.d2, P.y.d3 + Q.y.d3), modulus
         );
 
         if (opposite_y != 0) {
+            // P + (-P) = O (point at infinity)
             return (res=G1Point(UInt384(0, 0, 0, 0), UInt384(0, 0, 0, 0)));
         } else {
+            // P = Q, so we need to double the point
             let (circuit) = get_DOUBLE_EC_POINT_circuit(curve_id);
             let (A) = get_a(curve_id);
             let (input: UInt384*) = alloc();
@@ -172,6 +221,7 @@ func add_ec_points{
             return (res=[cast(res, G1Point*)]);
         }
     } else {
+        // P and Q have different x-coordinates, perform regular addition
         let (circuit) = get_ADD_EC_POINT_circuit(curve_id);
         let (input: UInt384*) = alloc();
         assert input[0] = P.x;
