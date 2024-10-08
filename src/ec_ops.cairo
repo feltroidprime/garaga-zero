@@ -90,6 +90,59 @@ func is_on_curve_g1_g2{
     return (res=1);
 }
 
+// Negate a G1Point by inversing y. This can be achieved by computing -P.y = CURVE_P - P.y
+func negate_point{
+    range_check96_ptr: felt*
+}(p: G1Point, curve_id: felt) -> (res: G1Point) {
+    alloc_locals;
+    let (CURVE_P) = get_P(curve_id);
+    let borrow = 0;
+
+    let (d0, borrow) = subtract_limb(CURVE_P.d0, p.y.d0);
+    let (d1, borrow) = subtract_limb(CURVE_P.d1, p.y.d1 + borrow);
+    let (d2, borrow) = subtract_limb(CURVE_P.d2, p.y.d2 + borrow);
+    let (d3, _) = subtract_limb(CURVE_P.d3, p.y.d3 + borrow);
+
+    // Compute -y mod P
+    let neg_y = UInt384(
+        d0=d0,
+        d1=d1,
+        d2=d2,
+        d3=d3,
+    );
+
+    return (res=G1Point(x=p.x, y=neg_y));
+}
+
+// Subtract two limbs, with overflow/underflow checks
+func subtract_limb{
+    range_check96_ptr: felt*
+}(x: felt, y: felt) -> (felt, felt) {
+    %{ memory[ap]=1 if ids.x < ids.y else 0 %}
+    ap += 1;
+    let is_underflow = [ap - 1];
+
+    if (is_underflow != 0) {
+        assert [range_check96_ptr] = y - x;
+        tempvar range_check96_ptr = range_check96_ptr + 1;
+        // Correct underflow
+        let limb_result = (x + BASE) - y;
+        return (limb_result, 1);  // borrow 1
+    } else {
+        assert [range_check96_ptr] = x - y;
+        tempvar range_check96_ptr = range_check96_ptr + 1;
+        return (x - y, 0);  // no borrow
+    }
+}
+
+// Subtract two EC points. Doesn't check if the inputs are on curve nor if they are the point at infinity.
+func sub_ec_points{range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(curve_id: felt, p: G1Point, q: G1Point) -> (res: G1Point) {
+    alloc_locals;
+    let (neg_Q) = negate_point(q, curve_id);
+    let (result) = add_ec_points(curve_id, p, neg_Q);
+    return (res=result);
+}
+
 // Add two EC points. Doesn't check if the inputs are on curve nor if they are the point at infinity.
 func add_ec_points{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
