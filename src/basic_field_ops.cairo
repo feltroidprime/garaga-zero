@@ -2,6 +2,96 @@ from starkware.cairo.common.cairo_builtins import UInt384
 from starkware.cairo.common.cairo_builtins import ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 
+// Assert X == - Y mod p by asserting X + Y == 0
+func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
+    x: UInt384, y: UInt384, p: UInt384
+) -> (x_plus_y: UInt384) {
+    let (_, pc) = get_fp_and_pc();
+
+    pc_labelx:
+    let add_offsets_ptr = pc + (add_offsets - pc_labelx);
+
+    // X limbs.
+    assert [range_check96_ptr] = x.d0;
+    assert [range_check96_ptr + 1] = x.d1;
+    assert [range_check96_ptr + 2] = x.d2;
+    assert [range_check96_ptr + 3] = x.d3;
+    // Y limbs.
+    assert [range_check96_ptr + 4] = y.d0;
+    assert [range_check96_ptr + 5] = y.d1;
+    assert [range_check96_ptr + 6] = y.d2;
+    assert [range_check96_ptr + 7] = y.d3;
+
+    assert add_mod_ptr[0] = ModBuiltin(
+        p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=1
+    );
+    %{
+        from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
+        assert builtin_runners["add_mod_builtin"].instance_def.batch_size == 1
+
+        ModBuiltinRunner.fill_memory(
+            memory=memory,
+            add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 1),
+            mul_mod=None,
+        )
+    %}
+
+    let range_check96_ptr = range_check96_ptr + 12;
+    let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
+    return (x_plus_y=cast(range_check96_ptr - 4, UInt384*));
+
+    add_offsets:
+    dw 0;  // X
+    dw 4;  // Y
+    dw 8;  // X+Y
+}
+
+// Assert X == - Y mod p by asserting X + Y == 0
+func sub_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
+    x: UInt384, y: UInt384, p: UInt384
+) -> (x_minus_y: UInt384) {
+    let (_, pc) = get_fp_and_pc();
+
+    pc_labelx:
+    let add_offsets_ptr = pc + (add_offsets - pc_labelx);
+
+    // X limbs.
+    assert [range_check96_ptr] = x.d0;
+    assert [range_check96_ptr + 1] = x.d1;
+    assert [range_check96_ptr + 2] = x.d2;
+    assert [range_check96_ptr + 3] = x.d3;
+    // Y limbs.
+    assert [range_check96_ptr + 4] = y.d0;
+    assert [range_check96_ptr + 5] = y.d1;
+    assert [range_check96_ptr + 6] = y.d2;
+    assert [range_check96_ptr + 7] = y.d3;
+
+    assert add_mod_ptr[0] = ModBuiltin(
+        p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=1
+    );
+    %{
+        from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
+        assert builtin_runners["add_mod_builtin"].instance_def.batch_size == 1
+
+        ModBuiltinRunner.fill_memory(
+            memory=memory,
+            add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 1),
+            mul_mod=None,
+        )
+    %}
+
+    let range_check96_ptr = range_check96_ptr + 12;
+    let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
+    return (x_plus_y=cast(range_check96_ptr - 4, UInt384*));
+
+    add_offsets:
+    dw 4;  // Y
+    dw 8;  // X-Y
+    dw 0;
+
+    return (x_minus_y=cast(range_check96_ptr - 4, UInt384*));
+}
+
 func assert_zero_mod_P{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(x: UInt384, p: UInt384) {
     let (_, pc) = get_fp_and_pc();
 
