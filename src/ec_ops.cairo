@@ -1,16 +1,16 @@
 from definitions import (
-    is_zero_mod_P,
     get_P,
     G1Point,
     get_b,
     get_a,
     get_b2,
     get_fp_gen,
-    verify_zero4,
     G1Point_eq_zero,
     BASE,
     N_LIMBS,
 )
+from basic_field_ops import is_eq_mod_p, is_opposite_mod_p, is_zero_mod_p, assert_eq_mod_p
+
 from precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_G2_circuit,
     get_IS_ON_CURVE_G1_circuit,
@@ -53,9 +53,14 @@ func is_on_curve_g1{
     assert input[2] = A;
     assert input[3] = B;
     let (output: felt*) = run_modulo_circuit(circuit, input);
-    let (check_g1: felt) = is_zero_mod_P([cast(output, UInt384*)], P);
+    let (check_g1: felt) = is_zero_mod_p([cast(output, UInt384*)], P);
     return (res=check_g1);
 }
+
+// Params:
+// - curve_id: felt
+// - input: ptr to (G1x, G1y, G2x0, G2x1, G2y0, G2y1) (u384s)
+// Return 1 if G1 and G2 are on curve, 0 if any of them is not.
 func is_on_curve_g1_g2{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, input: felt*) -> (res: felt) {
@@ -74,9 +79,9 @@ func is_on_curve_g1_g2{
     assert input_full[9] = b21;
 
     let (output: felt*) = run_modulo_circuit(circuit, cast(input_full, felt*));
-    let (check_g1: felt) = is_zero_mod_P([cast(output, UInt384*)], P);
-    let (check_g20: felt) = is_zero_mod_P([cast(output + UInt384.SIZE, UInt384*)], P);
-    let (check_g21: felt) = is_zero_mod_P([cast(output + 2 * UInt384.SIZE, UInt384*)], P);
+    let (check_g1: felt) = is_zero_mod_p([cast(output, UInt384*)], P);
+    let (check_g20: felt) = is_zero_mod_p([cast(output + UInt384.SIZE, UInt384*)], P);
+    let (check_g21: felt) = is_zero_mod_p([cast(output + 2 * UInt384.SIZE, UInt384*)], P);
 
     if (check_g1 == 0) {
         return (res=0);
@@ -97,14 +102,10 @@ func add_ec_points{
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (local modulus: UInt384) = get_P(curve_id);
-    let (same_x) = is_zero_mod_P(
-        UInt384(P.x.d0 - Q.x.d0, P.x.d1 - Q.x.d1, P.x.d2 - Q.x.d2, P.x.d3 - Q.x.d3), modulus
-    );
+    let (same_x) = is_eq_mod_p(P.x, Q.x, modulus);
 
     if (same_x != 0) {
-        let (opposite_y) = is_zero_mod_P(
-            UInt384(P.y.d0 + Q.y.d0, P.y.d1 + Q.y.d1, P.y.d2 + Q.y.d2, P.y.d3 + Q.y.d3), modulus
-        );
+        let (opposite_y) = is_opposite_mod_p(P.y, Q.y, modulus);
 
         if (opposite_y != 0) {
             return (res=G1Point(UInt384(0, 0, 0, 0), UInt384(0, 0, 0, 0)));
@@ -184,27 +185,11 @@ func derive_EC_point_from_entropy{
 
     if (rhs_from_x_is_a_square_residue != 0) {
         // Assert should_be_rhs == rhs
-        verify_zero4(
-            UInt384(
-                output.rhs.d0 - output.should_be_rhs.d0,
-                output.rhs.d1 - output.should_be_rhs.d1,
-                output.rhs.d2 - output.should_be_rhs.d2,
-                output.rhs.d3 - output.should_be_rhs.d3,
-            ),
-            P,
-        );
+        assert_eq_mod_p(output.rhs, output.should_be_rhs, P);
         return (res=G1Point(x_384, output.y_try));
     } else {
         // Assert should_be_grhs == grhs & Retry.
-        verify_zero4(
-            UInt384(
-                output.grhs.d0 - output.should_be_grhs.d0,
-                output.grhs.d1 - output.should_be_grhs.d1,
-                output.grhs.d2 - output.should_be_grhs.d2,
-                output.grhs.d3 - output.should_be_grhs.d3,
-            ),
-            P,
-        );
+        assert_eq_mod_p(output.grhs, output.should_be_grhs, P);
         assert poseidon_ptr[0].input.s0 = entropy;
         assert poseidon_ptr[0].input.s1 = attempt;
         assert poseidon_ptr[0].input.s2 = 2;

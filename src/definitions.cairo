@@ -1,4 +1,7 @@
 from starkware.cairo.common.cairo_builtins import UInt384
+from starkware.cairo.common.cairo_builtins import ModBuiltin
+from starkware.cairo.common.registers import get_fp_and_pc
+from basic_field_ops import is_zero_mod_p
 
 namespace bls {
     const CURVE_ID = 1;
@@ -397,170 +400,15 @@ func one_E6D() -> (res: E6D) {
     );
 }
 
-struct UnreducedBigInt7 {
-    d0: felt,
-    d1: felt,
-    d2: felt,
-    d3: felt,
-    d4: felt,
-    d5: felt,
-    d6: felt,
-}
-
-func UInt384_mul(x: UInt384, y: UInt384) -> (res: UnreducedBigInt7) {
-    return (
-        UnreducedBigInt7(
-            d0=x.d0 * y.d0,
-            d1=x.d0 * y.d1 + x.d1 * y.d0,
-            d2=x.d0 * y.d2 + x.d1 * y.d1 + x.d2 * y.d0,
-            d3=x.d0 * y.d3 + x.d1 * y.d2 + x.d2 * y.d1 + x.d3 * y.d0,
-            d4=x.d1 * y.d3 + x.d2 * y.d2 + x.d3 * y.d1,
-            d5=x.d2 * y.d3 + x.d3 * y.d2,
-            d6=x.d3 * y.d3,
-        ),
-    );
-}
-
-func is_zero_mod_P{range_check_ptr, range_check96_ptr: felt*}(x: UInt384, p: UInt384) -> (
-    res: felt
-) {
-    alloc_locals;
-    %{
-        from garaga.hints.io import bigint_pack
-        x = bigint_pack(ids.x, 4, 2**96)
-        p = bigint_pack(ids.p, 4, 2**96)
-        x=x%p
-    %}
-    if (nondet %{ x == 0 %} != 0) {
-        verify_zero4(x, p);
-        return (res=1);
-    }
-
-    local x_inv: UInt384;
-    %{
-        from garaga.hints.io import bigint_fill
-        bigint_fill(pow(x, -1, p), ids.x_inv, ids.N_LIMBS, ids.BASE)
-    %}
-    assert [range_check96_ptr] = x_inv.d0;
-    assert [range_check96_ptr + 1] = x_inv.d1;
-    assert [range_check96_ptr + 2] = x_inv.d2;
-    assert [range_check96_ptr + 3] = x_inv.d3;
-
-    tempvar range_check96_ptr = range_check96_ptr + 4;
-
-    let (x_x_inv) = UInt384_mul(x, x_inv);
-
-    // Check that x * x_inv = 1 to verify that x != 0.
-    verify_zero7(
-        UnreducedBigInt7(
-            d0=x_x_inv.d0 - 1,
-            d1=x_x_inv.d1,
-            d2=x_x_inv.d2,
-            d3=x_x_inv.d3,
-            d4=x_x_inv.d4,
-            d5=x_x_inv.d5,
-            d6=x_x_inv.d6,
-        ),
-        p,
-    );
-    return (res=0);
-}
-
-func verify_zero4{range_check_ptr, range_check96_ptr: felt*}(x: UInt384, p: UInt384) {
-    alloc_locals;
-    local q: felt;
-    %{
-        from garaga.hints.io import bigint_pack
-
-        x = bigint_pack(ids.x, 4, 2**96)
-        p = bigint_pack(ids.p, 4, 2**96)
-
-        q, r = divmod(x, p)
-        assert r == 0, f"verify_zero: Invalid input."
-        ids.q=q
-    %}
-
-    assert [range_check96_ptr] = q;
-
-    tempvar carry1 = (q * p.d0 - x.d0) / BASE;
-    assert [range_check_ptr] = carry1 + 2 ** 127;
-
-    tempvar carry2 = (q * p.d1 - x.d1 + carry1) / BASE;
-    assert [range_check_ptr + 1] = carry2 + 2 ** 127;
-
-    tempvar carry3 = (q * p.d2 - x.d2 + carry2) / BASE;
-    assert [range_check_ptr + 2] = carry3 + 2 ** 127;
-
-    assert q * p.d3 - x.d3 + carry3 = 0;
-
-    let range_check_ptr = range_check_ptr + 3;
-    let range_check96_ptr = range_check96_ptr + 1;
-
-    return ();
-}
-
-func verify_zero7{range_check_ptr, range_check96_ptr: felt*}(val: UnreducedBigInt7, p: UInt384) {
-    alloc_locals;
-    local q: UInt384;
-    %{
-        from garaga.hints.io import bigint_pack, bigint_fill
-
-        val = bigint_pack(ids.val, 7, 2**96)
-        p = bigint_pack(ids.p, 4, 2**96)
-
-        q, r = divmod(val, p)
-        assert r == 0, f"verify_zero: Invalid input {val%p}."
-        bigint_fill(q, ids.q, ids.N_LIMBS, ids.BASE)
-    %}
-
-    assert [range_check_ptr] = q.d0 + 2 ** 127;
-    assert [range_check_ptr + 1] = q.d1 + 2 ** 127;
-    assert [range_check_ptr + 2] = q.d2 + 2 ** 127;
-    assert [range_check_ptr + 3] = q.d3 + 2 ** 127;
-
-    tempvar q_P: UnreducedBigInt7 = UnreducedBigInt7(
-        d0=q.d0 * p.d0,
-        d1=q.d0 * p.d1 + q.d1 * p.d0,
-        d2=q.d0 * p.d2 + q.d1 * p.d1 + q.d2 * p.d0,
-        d3=q.d0 * p.d3 + q.d1 * p.d2 + q.d2 * p.d1 + q.d3 * p.d0,
-        d4=q.d1 * p.d3 + q.d2 * p.d2 + q.d3 * p.d1,
-        d5=q.d2 * p.d3 + q.d3 * p.d2,
-        d6=q.d3 * p.d3,
-    );
-
-    tempvar carry1 = (q_P.d0 - val.d0) / BASE;
-    assert [range_check_ptr + 4] = carry1 + 2 ** 127;
-
-    tempvar carry2 = (q_P.d1 - val.d1 + carry1) / BASE;
-    assert [range_check_ptr + 5] = carry2 + 2 ** 127;
-
-    tempvar carry3 = (q_P.d2 - val.d2 + carry2) / BASE;
-    assert [range_check_ptr + 6] = carry3 + 2 ** 127;
-
-    tempvar carry4 = (q_P.d3 - val.d3 + carry3) / BASE;
-    assert [range_check_ptr + 7] = carry4 + 2 ** 127;
-
-    tempvar carry5 = (q_P.d4 - val.d4 + carry4) / BASE;
-    assert [range_check_ptr + 8] = carry5 + 2 ** 127;
-
-    tempvar carry6 = (q_P.d5 - val.d5 + carry5) / BASE;
-    assert [range_check_ptr + 9] = carry6 + 2 ** 127;
-
-    assert q_P.d6 - val.d6 + carry6 = 0;
-
-    tempvar range_check_ptr = range_check_ptr + 10;
-    return ();
-}
-
 func is_zero_E6D{range_check_ptr, range_check96_ptr: felt*}(x: E6D, curve_id: felt) -> (res: felt) {
     alloc_locals;
     let (P) = get_P(curve_id);
-    let (is_zero_v0) = is_zero_mod_P(x.v0, P);
-    let (is_zero_v1) = is_zero_mod_P(x.v1, P);
-    let (is_zero_v2) = is_zero_mod_P(x.v2, P);
-    let (is_zero_v3) = is_zero_mod_P(x.v3, P);
-    let (is_zero_v4) = is_zero_mod_P(x.v4, P);
-    let (is_zero_v5) = is_zero_mod_P(x.v5, P);
+    let (is_zero_v0) = is_zero_mod_p(x.v0, P);
+    let (is_zero_v1) = is_zero_mod_p(x.v1, P);
+    let (is_zero_v2) = is_zero_mod_p(x.v2, P);
+    let (is_zero_v3) = is_zero_mod_p(x.v3, P);
+    let (is_zero_v4) = is_zero_mod_p(x.v4, P);
+    let (is_zero_v5) = is_zero_mod_p(x.v5, P);
     if (is_zero_v0 == 0) {
         return (res=0);
     }
