@@ -400,7 +400,9 @@ func one_E6D() -> (res: E6D) {
     );
 }
 
-func is_zero_E6D{range_check_ptr, range_check96_ptr: felt*}(x: E6D, curve_id: felt) -> (res: felt) {
+func is_zero_E6D{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(
+    x: E6D, curve_id: felt
+) -> (res: felt) {
     alloc_locals;
     let (P) = get_P(curve_id);
     let (is_zero_v0) = is_zero_mod_p(x.v0, P);
