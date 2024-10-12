@@ -38,7 +38,7 @@ func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
 
     let range_check96_ptr = range_check96_ptr + 12;
     let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
-    return (x_plus_y=cast(range_check96_ptr - 4, UInt384*));
+    return (x_plus_y=[cast(range_check96_ptr - 4, UInt384*)]);
 
     add_offsets:
     dw 0;  // X
@@ -82,14 +82,12 @@ func sub_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
 
     let range_check96_ptr = range_check96_ptr + 12;
     let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
-    return (x_plus_y=cast(range_check96_ptr - 4, UInt384*));
+    return (x_minus_y=[cast(range_check96_ptr - 4, UInt384*)]);
 
     add_offsets:
     dw 4;  // Y
     dw 8;  // X-Y
     dw 0;
-
-    return (x_minus_y=cast(range_check96_ptr - 4, UInt384*));
 }
 
 func assert_zero_mod_P{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(x: UInt384, p: UInt384) {
@@ -466,7 +464,7 @@ func assert_not_opposite_mod_p{
     %}
 
     assert add_mod_ptr[0] = ModBuiltin(
-        p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=2
+        p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=1
     );
     assert mul_mod_ptr[0] = ModBuiltin(
         p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=mul_offsets_ptr, n=1
@@ -483,7 +481,7 @@ func assert_not_opposite_mod_p{
         )
     %}
     let range_check96_ptr = range_check96_ptr + 20;
-    let add_mod_ptr = add_mod_ptr + 2 * ModBuiltin.SIZE;
+    let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
     let mul_mod_ptr = mul_mod_ptr + ModBuiltin.SIZE;
     return ();
 
