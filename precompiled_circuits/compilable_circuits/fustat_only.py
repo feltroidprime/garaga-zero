@@ -231,6 +231,7 @@ class MultiPairingCheck(BaseEXTFCircuit):
         m, _, _, _, _ = circuit.multi_pairing_check(n_pairs)
 
         circuit.extend_output(m)
+
         circuit.finalize_circuit()
 
         return circuit

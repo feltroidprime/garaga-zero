@@ -19,12 +19,8 @@ SPECIAL_CASES = {
     "sample_groth16.cairo": get_input_json_files(
         "tests/fustat_programs/", "sample_groth16"
     ),
-    "test_pairing.cairo": get_input_json_files(
-        "build/program_inputs/", "test_pairing", ".json"
-    ),
 }
 
-print(SPECIAL_CASES)
 COMPILED_FILES_DIR = "build/compiled_cairo_files"
 
 
