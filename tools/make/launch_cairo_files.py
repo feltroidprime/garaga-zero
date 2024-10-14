@@ -97,8 +97,6 @@ class CairoRunner:
 
         if self.filename_dot_cairo == "sample_groth16.cairo":
             self._select_input_file_manually("tests/fustat_programs/")
-        elif self.filename_dot_cairo == "test_pairing.cairo":
-            self._select_input_file_manually("build/program_inputs/")
         else:
             self._set_default_json_input_path()
 

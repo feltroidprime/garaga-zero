@@ -8,6 +8,9 @@ from definitions import (
     G1Point_eq_zero,
     BASE,
     N_LIMBS,
+    G1G2Pair,
+    TRUE,
+    FALSE,
 )
 from basic_field_ops import is_eq_mod_p, is_opposite_mod_p, is_zero_mod_p, assert_eq_mod_p
 
@@ -36,7 +39,7 @@ from utils import (
     sign_to_UInt384,
     neg_3_pow_alloc_80,
     scalars_to_epns_low_high,
-    hash_full_transcript_and_get_Z,
+    hash_efelt_transcript,
 )
 
 func is_on_curve_g1{
@@ -93,6 +96,22 @@ func is_on_curve_g1_g2{
         return (res=0);
     }
     return (res=1);
+}
+
+func all_g1_g2_pairs_are_on_curve{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(input: felt*, n: felt, curve_id: felt) -> (res: felt) {
+    alloc_locals;
+    if (n == 0) {
+        return (res=TRUE);
+    } else {
+        let (check) = is_on_curve_g1_g2(curve_id, input);
+        if (check == TRUE) {
+            return all_g1_g2_pairs_are_on_curve(input + G1G2Pair.SIZE, n - 1, curve_id);
+        } else {
+            return (res=FALSE);
+        }
+    }
 }
 
 // Add two EC points. Doesn't check if the inputs are on curve nor if they are the point at infinity.
@@ -327,17 +346,22 @@ func hash_sum_dlog_div{poseidon_ptr: PoseidonBuiltin*}(
     f: FunctionFelt, msm_size: felt, init_hash: felt, curve_id: felt
 ) -> (res: felt) {
     alloc_locals;
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(f.a_num, felt*), n=msm_size + 1, init_hash=init_hash, curve_id=curve_id
+    assert poseidon_ptr[0].input.s0 = init_hash;
+    assert poseidon_ptr[0].input.s1 = 0;
+    assert poseidon_ptr[0].input.s2 = 1;
+    let poseidon_ptr = poseidon_ptr + PoseidonBuiltin.SIZE;
+
+    let (s0: felt, s1: felt, s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(f.a_num, felt*), n=msm_size + 1, curve_id=curve_id
     );
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(f.a_den, felt*), n=msm_size + 2, init_hash=Z, curve_id=curve_id
+    let (s0: felt, s1: felt, s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(f.a_den, felt*), n=msm_size + 2, curve_id=curve_id
     );
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(f.b_num, felt*), n=msm_size + 2, init_hash=Z, curve_id=curve_id
+    let (s0: felt, s1: felt, s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(f.b_num, felt*), n=msm_size + 2, curve_id=curve_id
     );
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(f.b_den, felt*), n=msm_size + 5, init_hash=Z, curve_id=curve_id
+    let (Z: felt, _, _) = hash_efelt_transcript(
+        limbs_ptr=cast(f.b_den, felt*), n=msm_size + 5, curve_id=curve_id
     );
 
     return (res=Z);
@@ -410,17 +434,22 @@ func msm{
     assert is_on_curve_high = 1;
     assert is_on_curve_shifted = 1;
 
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(points, felt*), n=n * 2, init_hash='MSM', curve_id=curve_id
+    assert poseidon_ptr[0].input.s0 = 'MSM';
+    assert poseidon_ptr[0].input.s1 = 0;
+    assert poseidon_ptr[0].input.s2 = 1;
+    let poseidon_ptr = poseidon_ptr + PoseidonBuiltin.SIZE;
+
+    let (s0: felt, s1: felt, s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(points, felt*), n=n * 2, curve_id=curve_id
     );
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(&Q_low, felt*), n=2, init_hash=Z, curve_id=curve_id
+    let (s0: felt, s1: felt, s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(&Q_low, felt*), n=2, curve_id=curve_id
     );
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(&Q_high, felt*), n=2, init_hash=Z, curve_id=curve_id
+    let (s0: felt, s1: felt, s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(&Q_high, felt*), n=2, curve_id=curve_id
     );
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=cast(&Q_high_shifted, felt*), n=2, init_hash=Z, curve_id=curve_id
+    let (Z: felt, _, _) = hash_efelt_transcript(
+        limbs_ptr=cast(&Q_high_shifted, felt*), n=2, curve_id=curve_id
     );
     let (Zt: felt) = poseidon_hash_many(2 * n, cast(scalars, felt*));
     let (Z: felt) = poseidon_hash(Zt, Z);

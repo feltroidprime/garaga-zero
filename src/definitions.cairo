@@ -3,6 +3,9 @@ from starkware.cairo.common.cairo_builtins import ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from basic_field_ops import is_zero_mod_p
 
+const TRUE = 1;
+const FALSE = 0;
+
 namespace bls {
     const CURVE_ID = 1;
     // p = 0x1A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAB
