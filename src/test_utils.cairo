@@ -1,35 +1,26 @@
-%builtins range_check poseidon range_check96 add_mod mul_mod
-
-from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
-from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.registers import get_fp_and_pc
+from definitions import N_LIMBS, BASE
 
-from definitions import bn, bls, UInt384, one_E12D, N_LIMBS, BASE, E12D
-
-from pairing import multi_pairing, G1G2Pair
-from modulo_circuit import ExtensionFieldModuloCircuit
-
-func main{
-    range_check_ptr,
-    poseidon_ptr: PoseidonBuiltin*,
-    range_check96_ptr: felt*,
-    add_mod_ptr: ModBuiltin*,
-    mul_mod_ptr: ModBuiltin*,
-}() {
+func load_random_G1G2_pairs(n_pairs: felt, curve_id: felt) -> (pairs: felt*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (local inputs: felt*) = alloc();
-
-    local n_pairs: felt;
-    local curve_id: felt;
+    let (local expected_outputs: felt*) = alloc();
     %{
         from garaga.definitions import CURVES, PyFelt, CurveID, get_base_field, tower_to_direct, G1Point, G2Point, G1G2Pair
         from garaga.hints.io import bigint_split, flatten, pack_e12d
+        import random
+        random.seed(0)
 
-        ids.n_pairs = program_input['n_pairs']
-        ids.curve_id=program_input['curve_id']
-        n1s, n2s = program_input['n1s'], program_input['n2s']
+        n_pairs = ids.n_pairs
         curve_id = CurveID(ids.curve_id)
+
+        n1s, n2s = [], []
+        order = CURVES[curve_id.value].n
+        for _ in range(n_pairs):
+            n1s.append(random.randint(1, order))
+            n2s.append(random.randint(1, order))
 
         def prepare_inputs_and_expected_outputs(curve_id, n_pairs):
             order = CURVES[curve_id.value].n
@@ -54,15 +45,25 @@ func main{
 
         segments.write_arg(ids.inputs, inputs)
     %}
+    return (inputs,);
+}
 
-    let (local res: E12D) = multi_pairing(cast(inputs, G1G2Pair*), n_pairs, curve_id);
+// Return flattened G1G2Pair list such that Π(P_i, Q_i) = 1
+func load_pairing_check_inputs(n_pairs: felt, curve_id: felt) -> (inputs: felt*) {
+    alloc_locals;
+    let (__fp__, _) = get_fp_and_pc();
+    let (local inputs: felt*) = alloc();
     %{
-        res = pack_e12d(ids.res, 4, 2**96)
-        #print(f"res: {[hex(x) for x in res]}")
-        #print(f"expected: {[hex(x) for x in expected_outputs]}\n")
-        assert res == expected_outputs, f"res: {res}, expected: {expected_outputs}"
-    %}
+        from garaga.definitions import CURVES, PyFelt, CurveID, get_base_field, tower_to_direct, G1Point, G2Point, G1G2Pair
+        from garaga.hints.io import bigint_split, flatten, pack_e12d
+        import random
+        random.seed(0)
+        from garaga.precompiled_circuits.multi_pairing_check import get_pairing_check_input
 
-    %{ print(f"Test MultiPairing for {CurveID(ids.curve_id).name} and {ids.n_pairs} pairs Passed\n") %}
-    return ();
+        curve_id = CurveID(ids.curve_id)
+        inputs, _ = get_pairing_check_input(curve_id, ids.n_pairs)
+        inputs = flatten([bigint_split(x, ids.N_LIMBS, ids.BASE) for x in inputs])
+        segments.write_arg(ids.inputs, inputs)
+    %}
+    return (inputs,);
 }

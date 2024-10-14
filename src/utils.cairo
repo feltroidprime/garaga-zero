@@ -6,42 +6,21 @@ from definitions import STARK_MIN_ONE_D2, N_LIMBS, BASE, bls, UInt384, get_min_o
 from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
 from starkware.cairo.common.math import assert_le_felt
 
-func get_Z_and_RLC_from_transcript{poseidon_ptr: PoseidonBuiltin*, range_check96_ptr: felt*}(
-    transcript_start: felt*,
-    poseidon_indexes_ptr: felt*,
-    n_elements_in_transcript: felt,
-    n_equations: felt,
-    init_hash: felt,
-    curve_id: felt,
-) -> (Z: felt, random_linear_combination_coefficients: felt*) {
-    alloc_locals;
-    tempvar poseidon_start = poseidon_ptr;
-    let (Z: felt) = hash_full_transcript_and_get_Z(
-        limbs_ptr=transcript_start,
-        n=n_elements_in_transcript,
-        init_hash=init_hash,
-        curve_id=curve_id,
-    );
-
-    let (RLC_coeffs: felt*) = retrieve_random_coefficients(
-        poseidon_start=poseidon_start, poseidon_indexes_ptr=poseidon_indexes_ptr, n=n_equations
-    );
-
-    return (Z=Z, random_linear_combination_coefficients=RLC_coeffs);
-}
-
-func hash_full_transcript_and_get_Z{poseidon_ptr: PoseidonBuiltin*}(
-    limbs_ptr: felt*, n: felt, init_hash: felt, curve_id: felt
-) -> (Z: felt) {
+// Continue sponge construction from the latest poseidon builin state for an array of UInt384.
+func hash_efelt_transcript{poseidon_ptr: PoseidonBuiltin*}(
+    limbs_ptr: felt*, n: felt, curve_id: felt
+) -> (_s0: felt, _s1: felt, _s2: felt) {
     if (curve_id == bls.CURVE_ID) {
-        return hash_full_transcript_and_get_Z_4_LIMBS(limbs_ptr, n, init_hash);
+        let (_s0, _s1, _s2) = hash_full_transcript_and_get_Z_4_LIMBS(limbs_ptr, n);
+        return (_s0, _s1, _s2);
     } else {
-        return hash_full_transcript_and_get_Z_3_LIMBS(limbs_ptr, n, init_hash);
+        let (_s0, _s1, _s2) = hash_full_transcript_and_get_Z_3_LIMBS(limbs_ptr, n);
+        return (_s0, _s1, _s2);
     }
 }
 func hash_full_transcript_and_get_Z_3_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
-    limbs_ptr: felt*, n: felt, init_hash: felt
-) -> (Z: felt) {
+    limbs_ptr: felt*, n: felt
+) -> (_s0: felt, _s1: felt, _s2: felt) {
     alloc_locals;
     local BASE = 2 ** 96;
     // %{
@@ -50,17 +29,14 @@ func hash_full_transcript_and_get_Z_3_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
     //     for e in to_hash:
     //         print(f"Will Hash {hex(e)}")
     // %}
+
     let elements_end = &limbs_ptr[n * N_LIMBS];
 
-    assert poseidon_ptr[0].input.s0 = init_hash;
-    assert poseidon_ptr[0].input.s1 = 0;
-    assert poseidon_ptr[0].input.s2 = 1;
     tempvar elements = limbs_ptr;
-    tempvar pos_ptr = cast(poseidon_ptr + PoseidonBuiltin.SIZE, felt*);
+    tempvar pos_ptr = cast(poseidon_ptr, felt*);
 
     loop:
     if (nondet %{ ids.elements_end - ids.elements >= 6*ids.N_LIMBS %} != 0) {
-        assert poseidon_ptr[0].output.s0 = poseidon_ptr[0].output.s0;
         // %{
         //     from garaga.hints.io import pack_bigint_ptr
         //     to_hash=pack_bigint_ptr(memory, ids.elements, ids.N_LIMBS, ids.BASE, 6)
@@ -118,14 +94,17 @@ func hash_full_transcript_and_get_Z_3_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
 
     assert cast(elements_end, felt) = cast(elements, felt);
 
-    tempvar poseidon_ptr = poseidon_ptr + (n + 1) * PoseidonBuiltin.SIZE;
-    tempvar res = [poseidon_ptr - PoseidonBuiltin.SIZE].output.s0;
-    return (Z=res);
+    tempvar poseidon_ptr = poseidon_ptr + n * PoseidonBuiltin.SIZE;
+    let res_ptr = poseidon_ptr - PoseidonBuiltin.SIZE;
+    tempvar s0 = [res_ptr].output.s0;
+    tempvar s1 = [res_ptr].output.s1;
+    tempvar s2 = [res_ptr].output.s2;
+    return (_s0=s0, _s1=s1, _s2=s2);
 }
 
 func hash_full_transcript_and_get_Z_4_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
-    limbs_ptr: felt*, n: felt, init_hash: felt
-) -> (Z: felt) {
+    limbs_ptr: felt*, n: felt
+) -> (_s0: felt, _s1: felt, _s2: felt) {
     alloc_locals;
     local BASE = 2 ** 96;
     // %{
@@ -136,15 +115,11 @@ func hash_full_transcript_and_get_Z_4_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
     // %}
     let elements_end = &limbs_ptr[n * N_LIMBS];
 
-    assert poseidon_ptr[0].input.s0 = init_hash;
-    assert poseidon_ptr[0].input.s1 = 0;
-    assert poseidon_ptr[0].input.s2 = 1;
     tempvar elements = limbs_ptr;
-    tempvar pos_ptr = cast(poseidon_ptr + PoseidonBuiltin.SIZE, felt*);
+    tempvar pos_ptr = cast(poseidon_ptr, felt*);
 
     loop:
     if (nondet %{ ids.elements_end - ids.elements >= 6*ids.N_LIMBS %} != 0) {
-        assert poseidon_ptr[0].output.s0 = poseidon_ptr[0].output.s0;
         // %{
         //     from garaga.hints.io import pack_bigint_ptr
         //     to_hash=pack_bigint_ptr(memory, ids.elements, ids.N_LIMBS, ids.BASE, 6)
@@ -202,48 +177,16 @@ func hash_full_transcript_and_get_Z_4_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
 
     assert cast(elements_end, felt) = cast(elements, felt);
 
-    tempvar poseidon_ptr = poseidon_ptr + (n + 1) * PoseidonBuiltin.SIZE;
-    tempvar res = [poseidon_ptr - PoseidonBuiltin.SIZE].output.s0;
+    tempvar poseidon_ptr = poseidon_ptr + n * PoseidonBuiltin.SIZE;
+    tempvar res_ptr = poseidon_ptr - PoseidonBuiltin.SIZE;
+    tempvar s0 = [res_ptr].output.s0;
+    tempvar s1 = [res_ptr].output.s1;
+    tempvar s2 = [res_ptr].output.s2;
     // %{ print(f"res {hex(ids.res)}") %}
-    return (Z=res);
+    return (_s0=s0, _s1=s1, _s2=s2);
 }
 
-func retrieve_random_coefficients(
-    poseidon_start: PoseidonBuiltin*, poseidon_indexes_ptr: felt*, n: felt
-) -> (coefficients: felt*) {
-    alloc_locals;
-    let (local coefficients_start: felt*) = alloc();
-    local ptr: felt* = cast(poseidon_start, felt*);
-
-    %{ i=0 %}
-    assert [coefficients_start] = [ptr + [poseidon_indexes_ptr]];
-    tempvar coefficients = coefficients_start + 1;
-    tempvar poseidon_indexes_ptr = poseidon_indexes_ptr + 1;
-
-    get_s1_loop:
-    let coefficients = cast([ap - 2], felt*);
-    let poseidon_indexes_ptr = cast([ap - 1], felt*);
-    %{
-        i+=1
-        memory[ap] = 1 if i == ids.n else 0
-    %}
-    jmp end if [ap] != 0, ap++;
-    assert [coefficients] = [ptr + [poseidon_indexes_ptr]];
-    [ap] = coefficients + 1, ap++;
-    [ap] = poseidon_indexes_ptr + 1, ap++;
-    jmp get_s1_loop;
-
-    end:
-    assert n = cast(coefficients, felt) - cast(coefficients_start, felt);
-    // %{
-    //     from garaga.hints.io import pack_bigint_ptr
-    //     array=pack_bigint_ptr(memory, ids.coefficients, 1, ids.BASE, ids.n)
-    //     for i,e in enumerate(array):
-    //         print(f"CAIRO Using c_{i} = {hex(e)}")
-    // %}
-    return (coefficients=coefficients_start);
-}
-
+// Decompose n felt252 into n valid UInt384 and write them to the value segment.
 func write_felts_to_value_segment{range_check96_ptr: felt*}(values_start: felt*, n: felt) -> () {
     alloc_locals;
     local stark_min_1_d2 = STARK_MIN_ONE_D2;

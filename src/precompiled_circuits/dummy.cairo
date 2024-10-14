@@ -6,6 +6,7 @@ from modulo_circuit import (
     get_void_extension_field_modulo_circuit,
 )
 from definitions import bn, bls
+
 func get_DUMMY_circuit(curve_id: felt) -> (circuit: ModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();

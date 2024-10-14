@@ -10,7 +10,8 @@ from modulo_circuit import (
 )
 from definitions import bn, bls, UInt384, N_LIMBS, BASE, E12D
 
-from precompiled_circuits.extf_mul import get_FP12_MUL_circuit
+from precompiled_circuits.fp12_mul_bls12_381 import get_BLS12_381_FP12_MUL_circuit
+from precompiled_circuits.fp12_mul_bn254 import get_BN254_FP12_MUL_circuit
 
 from modulo_circuit import ExtensionFieldModuloCircuit
 
@@ -53,11 +54,11 @@ func main{
         fill_e12d(Zbls, ids.expected_bls, 4, 2**96)
     %}
 
-    let (circuit) = get_FP12_MUL_circuit(bn.CURVE_ID);
+    let (circuit) = get_BN254_FP12_MUL_circuit();
     let (output, _) = run_extension_field_modulo_circuit(circuit, input_bn);
     local res_bn: E12D = [cast(output, E12D*)];
 
-    let (circuit) = get_FP12_MUL_circuit(bls.CURVE_ID);
+    let (circuit) = get_BLS12_381_FP12_MUL_circuit();
     let (output, _) = run_extension_field_modulo_circuit(circuit, input_bls);
     local res_bls: E12D = [cast(output, E12D*)];
     %{

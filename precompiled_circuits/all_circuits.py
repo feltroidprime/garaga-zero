@@ -1,9 +1,10 @@
+import os
+import re
 from enum import Enum
 
 from garaga.definitions import CurveID
 from garaga.precompiled_circuits.compilable_circuits.base import (
     BaseModuloCircuit,
-    cairo1_tests_header,
     compilation_mode_to_file_header,
     format_cairo_files_in_parallel,
     to_snake_case,
@@ -321,74 +322,99 @@ def main(
     CIRCUITS_TO_COMPILE: dict[CircuitID, dict],
     compilation_mode: int = 0,
 ):
-    """Compiles and writes all circuits to .cairo files"""
-
-    # Ensure the 'codes' dict keys match the filenames used for file creation.
-    # Using sets to remove potential duplicates
-    filenames_used = set([v["filename"] for v in CIRCUITS_TO_COMPILE.values()])
-    codes = {filename: set() for filename in filenames_used}
-    selector_functions = {filename: set() for filename in filenames_used}
-    cairo1_tests_functions = {filename: set() for filename in filenames_used}
-    cairo1_full_function_names = {filename: set() for filename in filenames_used}
-
-    files = {
-        f: open(f"{PRECOMPILED_CIRCUITS_DIR}{f}.cairo", "w") for f in filenames_used
-    }
+    """Compiles and writes all circuits to separate .cairo files"""
 
     # Write the header to each file
     HEADER = compilation_mode_to_file_header(compilation_mode)
 
-    for file in files.values():
-        file.write(HEADER)
-
-    # Instantiate and compile circuits for each curve
+    # Dictionary to store compiled circuits and selectors for each filename
+    compiled_files = {}
 
     for circuit_id, circuit_info in CIRCUITS_TO_COMPILE.items():
-        for curve_id in circuit_info.get(
-            "curve_ids", [CurveID.BN254, CurveID.BLS12_381]
-        ):
-            filename_key = circuit_info["filename"]
-            compiled_circuits, selectors = compile_circuit(
-                curve_id,
-                circuit_info["class"],
-                circuit_id,
-                circuit_info["params"],
-                compilation_mode,
-            )
-            codes[filename_key].update(compiled_circuits)
-            selector_functions[filename_key].update(selectors)
+        circuit_class = circuit_info["class"]
+        params = circuit_info["params"]
+        print(f"id: {circuit_id}, params: {params}")
+        temp_instance = circuit_class(
+            curve_id=CurveID.BN254.value,
+            compilation_mode=compilation_mode,
+            **(params[0] if params else {}),
+        )
 
-    # Write selector functions and compiled circuit codes to their respective files
-    print(f"Writing circuits and selectors to .cairo files...")
-    for filename in filenames_used:
-        if filename in files:
-            # Write the selector functions for this file
-            for selector_function in sorted(selector_functions[filename]):
-                files[filename].write(selector_function)
-            # Write the compiled circuit codes
-            for compiled_circuit in sorted(codes[filename]):
-                files[filename].write(compiled_circuit + "\n")
+        if temp_instance.circuit.generic_circuit:
+            # Handle generic circuits (keep selector function and all in one file)
+            filename = f"{circuit_info['filename']}.cairo"
+            if filename not in compiled_files:
+                compiled_files[filename] = {"circuits": set(), "selectors": set()}
 
-            if compilation_mode == 1:
-                files[filename].write(cairo1_tests_header() + "\n")
-                fns_to_import = sorted(cairo1_full_function_names[filename])
-                if "" in fns_to_import:
-                    fns_to_import.remove("")
-                files[filename].write(f"use super::{{{','.join(fns_to_import)}}};\n")
-                for cairo1_test in sorted(cairo1_tests_functions[filename]):
-                    files[filename].write(cairo1_test + "\n")
-                files[filename].write("}\n")
+            for curve_id in [CurveID.BN254, CurveID.BLS12_381]:
+                circuits, selectors = compile_circuit(
+                    curve_id, circuit_class, circuit_id, params, compilation_mode
+                )
+                compiled_files[filename]["circuits"].update(circuits)
+                compiled_files[filename]["selectors"].update(selectors)
 
         else:
-            print(f"Warning: No file associated with filename '{filename}'")
+            # Handle non-generic circuits (separate files for each)
+            for curve_id in [CurveID.BN254, CurveID.BLS12_381]:
+                if params is None:
+                    params = [None]
+                for param in params:
+                    param_str = f"_{param[list(param.keys())[0]]}" if param else ""
+                    filename = f"{circuit_id.name.lower()}_{curve_id.name.lower()}{param_str}.cairo"
 
-    # Close all files
-    for file in files.values():
-        file.close()
+                    if filename not in compiled_files:
+                        compiled_files[filename] = {
+                            "circuits": set(),
+                            "selectors": set(),
+                        }
 
+                    circuits, _ = compile_circuit(
+                        curve_id,
+                        circuit_class,
+                        circuit_id,
+                        [param] if param else None,
+                        compilation_mode,
+                    )
+                    compiled_files[filename]["circuits"].update(circuits)
+                    # compiled_files[filename]["selectors"].update(selectors)
+
+    # Write compiled circuits and selectors to files
+    for filename, content in compiled_files.items():
+        full_path = f"{PRECOMPILED_CIRCUITS_DIR}{filename}"
+        print(f"Writing {full_path}...")
+        with open(full_path, "w") as file:
+            file.write(HEADER)
+
+            # Add comment with available function names for generic circuits
+            if any("get_" in selector for selector in content["selectors"]):
+                function_names = set()
+                for circuit in content["circuits"]:
+                    # Extract function name from the circuit code
+                    match = re.search(r"func\s+(\w+)", circuit)
+                    if match:
+                        function_names.add(match.group(1))
+
+                file.write("// Available functions:\n")
+                for name in sorted(function_names):
+                    file.write(f"// - {name}\n")
+                file.write("\n")
+
+            for selector in content["selectors"]:
+                file.write(selector + "\n")
+
+            for circuit in content["circuits"]:
+                file.write(circuit + "\n")
+
+    # Format all created files
+    all_files = [
+        f.removesuffix(".cairo")
+        for f in os.listdir(PRECOMPILED_CIRCUITS_DIR)
+        if f.endswith(".cairo")
+    ]
     format_cairo_files_in_parallel(
-        filenames_used, compilation_mode, PRECOMPILED_CIRCUITS_DIR
+        all_files, compilation_mode, PRECOMPILED_CIRCUITS_DIR
     )
+
     return None
 
 
