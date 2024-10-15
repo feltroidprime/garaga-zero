@@ -131,14 +131,6 @@ func sub_ec_points{
     return (res=result);
 }
 
-// Add two elliptic curve points P and Q on the curve specified by curve_id.
-// It does not check if the input points are on the curve or if they are the point at infinity.
-// Parameters:
-//   curve_id: The ID of the elliptic curve being used
-//   P: The first point to add (G1Point)
-//   Q: The second point to add (G1Point)
-// Returns:
-//   res: The resulting point after addition (G1Point)
 func all_g1_g2_pairs_are_on_curve{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(input: felt*, n: felt, curve_id: felt) -> (res: felt) {
