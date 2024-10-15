@@ -12,7 +12,13 @@ from definitions import (
     TRUE,
     FALSE,
 )
-from basic_field_ops import is_eq_mod_p, is_opposite_mod_p, is_zero_mod_p, assert_eq_mod_p
+from basic_field_ops import (
+    is_eq_mod_p,
+    is_opposite_mod_p,
+    is_zero_mod_p,
+    assert_eq_mod_p,
+    sub_mod_p,
+)
 
 from precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_G2_circuit,
@@ -104,56 +110,6 @@ func is_on_curve_g1_g2{
     return (res=1);
 }
 
-// Negate a G1Point by inverting its y-coordinate
-// This is achieved by computing -P.y = CURVE_P - P.y
-// Parameters:
-//   p: The G1Point to negate
-//   curve_id: The ID of the elliptic curve being used
-// Returns:
-//   res: The negated G1Point
-func negate_point{range_check96_ptr: felt*}(p: G1Point, curve_id: felt) -> (res: G1Point) {
-    alloc_locals;
-    let (CURVE_P) = get_P(curve_id);
-    let borrow = 0;
-
-    // Perform subtraction CURVE_P - p.y for each limb
-    let (d0, borrow) = subtract_limb(CURVE_P.d0, p.y.d0);
-    let (d1, borrow) = subtract_limb(CURVE_P.d1, p.y.d1 + borrow);
-    let (d2, borrow) = subtract_limb(CURVE_P.d2, p.y.d2 + borrow);
-    let (d3, _) = subtract_limb(CURVE_P.d3, p.y.d3 + borrow);
-
-    // Construct the negated y-coordinate
-    let neg_y = UInt384(d0=d0, d1=d1, d2=d2, d3=d3);
-
-    // Return the negated point (x coordinate remains the same)
-    return (res=G1Point(x=p.x, y=neg_y));
-}
-
-// Subtract two limbs, returning the result and the borrow
-// This function handles the subtraction of individual limbs in the UInt384 representation
-// Parameters:
-//   x: The minuend (number being subtracted from)
-//   y: The subtrahend (number being subtracted)
-// Returns:
-//   (result, borrow): The result of the subtraction and the borrow bit
-func subtract_limb{range_check96_ptr: felt*}(x: felt, y: felt) -> (felt, felt) {
-    %{ memory[ap]=1 if ids.x < ids.y else 0 %}
-    ap += 1;
-    let is_underflow = [ap - 1];
-
-    if (is_underflow != 0) {
-        assert [range_check96_ptr] = y - x;
-        tempvar range_check96_ptr = range_check96_ptr + 1;
-        // Correct underflow by adding BASE (2^96)
-        let limb_result = (x + BASE) - y;
-        return (limb_result, 1);  // borrow 1
-    } else {
-        assert [range_check96_ptr] = x - y;
-        tempvar range_check96_ptr = range_check96_ptr + 1;
-        return (x - y, 0);  // no borrow
-    }
-}
-
 // Subtract two EC points
 // This function doesn't check if the inputs are on the curve or if they are the point at infinity
 // Parameters:
@@ -167,7 +123,9 @@ func sub_ec_points{
 }(curve_id: felt, p: G1Point, q: G1Point) -> (res: G1Point) {
     alloc_locals;
     // Negate the second point
-    let (neg_Q) = negate_point(q, curve_id);
+    let (curve_p) = get_P(curve_id);
+    let (neg_Q_Y) = sub_mod_p(curve_p, q.y, curve_p);  // -Q.y = P - Q.y
+    let neg_Q = G1Point(q.x, neg_Q_Y);
     // Add the first point to the negated second point
     let (result) = add_ec_points(curve_id, p, neg_Q);
     return (res=result);
