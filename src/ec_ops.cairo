@@ -354,6 +354,34 @@ func compute_RHS_basis_sum{
     if (index == n) {
         return (res=sum);
     }
+    let _ep = [scalars_epns];
+    let _en = [scalars_epns + 1];
+    let scalar = _ep - _en;
+    if (scalar == 0) {
+        return compute_RHS_basis_sum(
+            curve_id=curve_id,
+            acc_circuit=acc_circuit,
+            points=points,
+            scalars_epns=scalars_epns + 4,
+            index=index + 1,
+            n=n,
+            sum=sum,
+            constants=constants,
+        );
+    }
+    let (pt_is_inf) = G1Point_eq_zero(points[index]);
+    if (pt_is_inf == 1) {
+        return compute_RHS_basis_sum(
+            curve_id=curve_id,
+            acc_circuit=acc_circuit,
+            points=points,
+            scalars_epns=scalars_epns + 4,
+            index=index + 1,
+            n=n,
+            sum=sum,
+            constants=constants,
+        );
+    }
     let (local input: UInt384*) = alloc();
     assert input[0] = sum;  // Copy previous sum to accumulate.
     // Copy only m_A0, b_A0, xA0 from SlopeInterceptOutput struct.
@@ -365,8 +393,8 @@ func compute_RHS_basis_sum{
         G1Point.SIZE,
     );
     // Copy i-th scalar's positive and negative parts.
-    let (ep) = felt_to_UInt384([scalars_epns]);
-    let (en) = felt_to_UInt384([scalars_epns + 1]);
+    let (ep) = felt_to_UInt384(_ep);
+    let (en) = felt_to_UInt384(_en);
     let (sp) = sign_to_UInt384([scalars_epns + 2], curve_id);
     let (sn) = sign_to_UInt384([scalars_epns + 3], curve_id);
 

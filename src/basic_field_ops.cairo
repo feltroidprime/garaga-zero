@@ -66,7 +66,7 @@ func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr:
 
 }
 
-// Assert X == - Y mod p by asserting X + Y == 0
+// Compute X + Y mod p.
 func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384
 ) -> (x_plus_y: UInt384) {
@@ -75,12 +75,12 @@ func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     pc_labelx:
     let add_offsets_ptr = pc + (add_offsets - pc_labelx);
 
-    // X limbs.
+    // X limbs (offset 0)
     assert [range_check96_ptr] = x.d0;
     assert [range_check96_ptr + 1] = x.d1;
     assert [range_check96_ptr + 2] = x.d2;
     assert [range_check96_ptr + 3] = x.d3;
-    // Y limbs.
+    // Y limbs (offset 4)
     assert [range_check96_ptr + 4] = y.d0;
     assert [range_check96_ptr + 5] = y.d1;
     assert [range_check96_ptr + 6] = y.d2;
@@ -105,12 +105,13 @@ func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     return (x_plus_y=[cast(range_check96_ptr - 4, UInt384*)]);
 
     add_offsets:
+    // Instruction : assert 0 + 4 == 8
     dw 0;  // X
     dw 4;  // Y
     dw 8;  // X+Y
 }
 
-// Assert X == - Y mod p by asserting X + Y == 0
+// Compute X - Y mod p.
 func sub_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384
 ) -> (x_minus_y: UInt384) {
@@ -119,12 +120,12 @@ func sub_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     pc_labelx:
     let add_offsets_ptr = pc + (add_offsets - pc_labelx);
 
-    // X limbs.
+    // X limbs (offset 0)
     assert [range_check96_ptr] = x.d0;
     assert [range_check96_ptr + 1] = x.d1;
     assert [range_check96_ptr + 2] = x.d2;
     assert [range_check96_ptr + 3] = x.d3;
-    // Y limbs.
+    // Y limbs (offset 4)
     assert [range_check96_ptr + 4] = y.d0;
     assert [range_check96_ptr + 5] = y.d1;
     assert [range_check96_ptr + 6] = y.d2;
@@ -149,11 +150,15 @@ func sub_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     return (x_minus_y=[cast(range_check96_ptr - 4, UInt384*)]);
 
     add_offsets:
+    // Instruction : assert 4 + 8 == 0
+    // 8 is unallocated, so the assert is Y + ?  == X
+    // => ? == X - Y, at offset 8.
     dw 4;  // Y
     dw 8;  // X-Y
     dw 0;
 }
 
+// Assert X == 0 mod p.
 func assert_zero_mod_P{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(x: UInt384, p: UInt384) {
     let (_, pc) = get_fp_and_pc();
 
@@ -188,13 +193,15 @@ func assert_zero_mod_P{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(x: UI
     let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
     return ();
 
-    // Assert 0 + X == 0
     add_offsets:
-    dw 0;
-    dw 4;
-    dw 0;
+    // Instruction (offsets) : assert 0 + 4 == 0
+    // <=> 0 + X == 0 mod p. => X == 0 mod p.
+    dw 0;  // 0
+    dw 4;  // X
+    dw 0;  // 0
 }
 
+// Assert X != 0 mod p.
 func assert_not_zero_mod_P{range_check96_ptr: felt*, mul_mod_ptr: ModBuiltin*}(
     x: UInt384, p: UInt384
 ) {
@@ -203,17 +210,18 @@ func assert_not_zero_mod_P{range_check96_ptr: felt*, mul_mod_ptr: ModBuiltin*}(
     pc_labelx:
     let mul_offsets_ptr = pc + (mul_offsets - pc_labelx);
 
-    // Const 1.
+    // Const 1. (offset 0)
     assert [range_check96_ptr] = 1;
     assert [range_check96_ptr + 1] = 0;
     assert [range_check96_ptr + 2] = 0;
     assert [range_check96_ptr + 3] = 0;
-    // X limbs.
+    // X limbs (offset 4)
     assert [range_check96_ptr + 4] = x.d0;
     assert [range_check96_ptr + 5] = x.d1;
     assert [range_check96_ptr + 6] = x.d2;
     assert [range_check96_ptr + 7] = x.d3;
 
+    // X^-1 (offset 8)
     let x_inv_d0 = [range_check96_ptr + 8];
     let x_inv_d1 = [range_check96_ptr + 9];
     let x_inv_d2 = [range_check96_ptr + 10];
@@ -252,11 +260,13 @@ func assert_not_zero_mod_P{range_check96_ptr: felt*, mul_mod_ptr: ModBuiltin*}(
     // Assert X*X_inv == 1 (hints will fill X_inv and proof will assert X*X_inv == 1).
     // If X_inv does not exists, no valid proof can be generated.
     mul_offsets:
-    dw 4;
-    dw 8;
-    dw 0;
+    // Instruction (offsets) : assert 4 * 8 == 0
+    dw 4;  // X
+    dw 8;  // X_inv
+    dw 0;  // 0
 }
 
+// Returns 1 if X == 0 mod p, 0 otherwise.
 func is_zero_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(
     x: UInt384, p: UInt384
 ) -> (res: felt) {
@@ -274,6 +284,7 @@ func is_zero_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_p
     }
 }
 
+// Assert X == Y mod p by asserting Y - X == 0
 func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384
 ) {
@@ -282,21 +293,25 @@ func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     pc_labelx:
     let add_offsets_ptr = pc + (add_offsets - pc_labelx);
 
-    // Const 0.
+    // Const 0. (offset 0)
     assert [range_check96_ptr] = 0;
     assert [range_check96_ptr + 1] = 0;
     assert [range_check96_ptr + 2] = 0;
     assert [range_check96_ptr + 3] = 0;
-    // X limbs.
+    // X limbs (offset 4)
     assert [range_check96_ptr + 4] = x.d0;
     assert [range_check96_ptr + 5] = x.d1;
     assert [range_check96_ptr + 6] = x.d2;
     assert [range_check96_ptr + 7] = x.d3;
-    // Y limbs.
+    // Y limbs (offset 8)
     assert [range_check96_ptr + 8] = y.d0;
     assert [range_check96_ptr + 9] = y.d1;
     assert [range_check96_ptr + 10] = y.d2;
     assert [range_check96_ptr + 11] = y.d3;
+
+    // Builtin results :
+    // (- X) (offset 12)
+    // (Y - X) (offset 16)
 
     assert add_mod_ptr[0] = ModBuiltin(
         p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=2
@@ -409,6 +424,7 @@ func assert_neq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mo
     dw 0;
 }
 
+// Returns 1 if X == Y mod p, 0 otherwise.
 func is_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384
 ) -> (res: felt) {
@@ -562,6 +578,7 @@ func assert_not_opposite_mod_p{
     dw 0;
 }
 
+// Returns 1 if X == -Y mod p, 0 otherwise.
 func is_opposite_mod_p{
     range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(x: UInt384, y: UInt384, p: UInt384) -> (res: felt) {
