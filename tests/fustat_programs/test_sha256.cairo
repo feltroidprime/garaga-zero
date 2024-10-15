@@ -49,7 +49,22 @@ func run_test{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, sha256_ptr: felt*, 
     local expected: Uint256;
     %{
         import hashlib
-        from cairo.py.utils import hex_to_chunks_32
+        # This function chunks from MSB to LSB
+        def hex_to_chunks_32(hex_string: str):
+            # Remove '0x' prefix if present
+            if hex_string.startswith(('0x', '0X')):
+                hex_string = hex_string[2:]
+
+            # if we have an odd number of characters, prepend a 0
+            if len(hex_string) % 2 == 1:
+                hex_string = '0' + hex_string
+
+            # Now split into 8-character (32-bit) chunks
+            chunks = [int(hex_string[i:i+8], 16) for i in range(0, len(hex_string), 8)]
+            return chunks
+
+
+
         preimage = int(preimages[ids.index], 16)
         ids.n_bytes = (preimage.bit_length() + 7) // 8
 
