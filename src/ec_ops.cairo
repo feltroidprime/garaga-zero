@@ -111,9 +111,7 @@ func is_on_curve_g1_g2{
 //   curve_id: The ID of the elliptic curve being used
 // Returns:
 //   res: The negated G1Point
-func negate_point{
-    range_check96_ptr: felt*
-}(p: G1Point, curve_id: felt) -> (res: G1Point) {
+func negate_point{range_check96_ptr: felt*}(p: G1Point, curve_id: felt) -> (res: G1Point) {
     alloc_locals;
     let (CURVE_P) = get_P(curve_id);
     let borrow = 0;
@@ -125,12 +123,7 @@ func negate_point{
     let (d3, _) = subtract_limb(CURVE_P.d3, p.y.d3 + borrow);
 
     // Construct the negated y-coordinate
-    let neg_y = UInt384(
-        d0=d0,
-        d1=d1,
-        d2=d2,
-        d3=d3,
-    );
+    let neg_y = UInt384(d0=d0, d1=d1, d2=d2, d3=d3);
 
     // Return the negated point (x coordinate remains the same)
     return (res=G1Point(x=p.x, y=neg_y));
@@ -143,9 +136,7 @@ func negate_point{
 //   y: The subtrahend (number being subtracted)
 // Returns:
 //   (result, borrow): The result of the subtraction and the borrow bit
-func subtract_limb{
-    range_check96_ptr: felt*
-}(x: felt, y: felt) -> (felt, felt) {
+func subtract_limb{range_check96_ptr: felt*}(x: felt, y: felt) -> (felt, felt) {
     %{ memory[ap]=1 if ids.x < ids.y else 0 %}
     ap += 1;
     let is_underflow = [ap - 1];
@@ -171,7 +162,9 @@ func subtract_limb{
 //   q: The second G1Point (subtrahend)
 // Returns:
 //   res: The result of p - q as a G1Point
-func sub_ec_points{range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(curve_id: felt, p: G1Point, q: G1Point) -> (res: G1Point) {
+func sub_ec_points{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(curve_id: felt, p: G1Point, q: G1Point) -> (res: G1Point) {
     alloc_locals;
     // Negate the second point
     let (neg_Q) = negate_point(q, curve_id);

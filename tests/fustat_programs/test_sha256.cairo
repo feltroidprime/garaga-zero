@@ -5,11 +5,7 @@ from starkware.cairo.common.alloc import alloc
 from src.sha import SHA256, sha256, HashUtils
 from src.utils import pow2alloc128
 
-func main{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*
-}() {
-
+func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;
 
     let (sha256_ptr, sha256_ptr_start) = SHA256.init();
@@ -17,7 +13,6 @@ func main{
     local length: felt;
 
     %{
-
         import random
         import os
 
@@ -31,7 +26,7 @@ func main{
         ids.length = len(preimages)
     %}
 
-    with sha256_ptr, pow2_array {   
+    with sha256_ptr, pow2_array {
         run_test(index=length - 1);
     }
 
@@ -40,15 +35,12 @@ func main{
     return ();
 }
 
-func run_test{
-    range_check_ptr,
-    bitwise_ptr: BitwiseBuiltin*,
-    sha256_ptr: felt*,
-    pow2_array: felt*
-}(index: felt) {
+func run_test{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, sha256_ptr: felt*, pow2_array: felt*}(
+    index: felt
+) {
     alloc_locals;
 
-    if(index == 0) {
+    if (index == 0) {
         return ();
     }
 
@@ -60,7 +52,7 @@ func run_test{
         from cairo.py.utils import hex_to_chunks_32
         preimage = int(preimages[ids.index], 16)
         ids.n_bytes = (preimage.bit_length() + 7) // 8
-        
+
         expected = hashlib.sha256(preimage.to_bytes(length=ids.n_bytes, byteorder='big')).hexdigest()
         ids.expected.high, ids.expected.low = divmod(int(expected, 16), 2**128)
 
@@ -75,7 +67,5 @@ func run_test{
         assert hash.low = expected.low;
     }
 
-
     return run_test(index=index - 1);
-
 }

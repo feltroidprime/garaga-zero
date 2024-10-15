@@ -12,14 +12,14 @@ from src.sha import SHA256, HashUtils
 // HashToField functionality, using SHA256 and 32-byte messages
 // DST is "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_"
 namespace HashToField32 {
-    const B_IN_BYTES = 32; // hash function output size
-    const B_IN_FELTS = 8; // 32 bytes, require 8 chunks
+    const B_IN_BYTES = 32;  // hash function output size
+    const B_IN_FELTS = 8;  // 32 bytes, require 8 chunks
     const Z_PAD_LEN = B_IN_FELTS * 2;
     const BYTES_PER_CHUNK = 4;
-    const CURVE_M = 2; // extension degree of F
-    const CURVE_K = 128; // security level
-    const CURVE_L = 64; // ceil((CURVE.P.bitlength + CURVE_K) / 8)
-    const CURVE_L_IN_FELTS = 16; // 64 bits, require 16 chunks
+    const CURVE_M = 2;  // extension degree of F
+    const CURVE_K = 128;  // security level
+    const CURVE_L = 64;  // ceil((CURVE.P.bitlength + CURVE_K) / 8)
+    const CURVE_L_IN_FELTS = 16;  // 64 bits, require 16 chunks
 
     // Returns a zero-padded array of length CHUNKS_PER_BLOCK * 2
     func Z_PAD() -> felt* {
@@ -40,7 +40,7 @@ namespace HashToField32 {
         assert [z_pad + 13] = 0;
         assert [z_pad + 14] = 0;
         assert [z_pad + 15] = 0;
-        
+
         return z_pad;
     }
 
@@ -74,11 +74,8 @@ namespace HashToField32 {
     // Returns:
     // - result: the expanded message
     func expand_msg_xmd{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        sha256_ptr: felt*,
-        pow2_array: felt*
-    }(msg: felt*, msg_bytes_len: felt, n_bytes: felt) -> (result: felt*){
+        range_check_ptr, bitwise_ptr: BitwiseBuiltin*, sha256_ptr: felt*, pow2_array: felt*
+    }(msg: felt*, msg_bytes_len: felt, n_bytes: felt) -> (result: felt*) {
         alloc_locals;
 
         // for now we only support 32 bytes messages. Some smaller changes are needed to support other msg lengths
@@ -103,21 +100,21 @@ namespace HashToField32 {
         memcpy(dst=msg_hash_train + Z_PAD_LEN, src=msg, len=8);
 
         // Append other required values (DST and lengths)
-        assert [msg_hash_train + 24] = 0x01000042; // to_bytes(n_bytes, 2) + 0x0 + DST (starts at 42)
+        assert [msg_hash_train + 24] = 0x01000042;  // to_bytes(n_bytes, 2) + 0x0 + DST (starts at 42)
         assert [msg_hash_train + 25] = 0x4C535F53;
         assert [msg_hash_train + 26] = 0x49475F42;
         assert [msg_hash_train + 27] = 0x4C533132;
-        assert [msg_hash_train + 28] = 0x33383147; 
+        assert [msg_hash_train + 28] = 0x33383147;
         assert [msg_hash_train + 29] = 0x325F584D;
         assert [msg_hash_train + 30] = 0x443A5348;
         assert [msg_hash_train + 31] = 0x412D3235;
         assert [msg_hash_train + 32] = 0x365F5353;
         assert [msg_hash_train + 33] = 0x57555F52;
         assert [msg_hash_train + 34] = 0x4F5F4E55;
-        assert [msg_hash_train + 35] = 0x4C5F2B; // DST + DST.len
+        assert [msg_hash_train + 35] = 0x4C5F2B;  // DST + DST.len
 
         // Compute the initial hash (b_0)
-        let (msg_hash) = SHA256.hash_bytes(msg_hash_train, 111 + msg_bytes_len); // 64b z_pad + msg_bytes_len + 2b block_size, 0x0 ++ 43b dst + 1b dst_len
+        let (msg_hash) = SHA256.hash_bytes(msg_hash_train, 111 + msg_bytes_len);  // 64b z_pad + msg_bytes_len + 2b block_size, 0x0 ++ 43b dst + 1b dst_len
 
         // Prepare input for the first block hash (b_1)
         let (hash_args: felt*) = alloc();
@@ -126,9 +123,9 @@ namespace HashToField32 {
         memcpy(dst=hash_args + 8, src=one_dst_prime, len=12);
 
         // Compute the first block hash (b_1)
-        let (hash_1) = SHA256.hash_bytes(hash_args, 77); // 32b msg + 1b 0x1 + 43b dst + 1b dst_len
+        let (hash_1) = SHA256.hash_bytes(hash_args, 77);  // 32b msg + 1b 0x1 + 43b dst + 1b dst_len
 
-        // Create hash_train and copy first hash. The hash_train contains all 
+        // Create hash_train and copy first hash. The hash_train contains all
         let (hash_train: felt*) = alloc();
         memcpy(dst=hash_train, src=hash_1, len=B_IN_FELTS);
 
@@ -141,20 +138,19 @@ namespace HashToField32 {
         memcpy(dst=result, src=hash_train, len=n_bytes / 4);
 
         return (result=result);
-
     }
-    
+
     // Inner recursive function for expand_msg_xmd
     func expand_msg_xmd_inner{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
         sha256_ptr: felt*,
         pow2_array: felt*,
-        one_dst_prime: felt*
+        one_dst_prime: felt*,
     }(msg_hash: felt*, hash_train: felt*, ell: felt, index: felt) {
         alloc_locals;
 
-        if(index == ell){
+        if (index == ell) {
             return ();
         }
 
@@ -171,7 +167,9 @@ namespace HashToField32 {
         // Store the new block hash in the output array
         memcpy(dst=hash_train + (index + 1) * B_IN_FELTS, src=hash, len=B_IN_FELTS);
 
-        return expand_msg_xmd_inner(msg_hash=msg_hash, hash_train=hash_train, ell=ell, index=index+1);
+        return expand_msg_xmd_inner(
+            msg_hash=msg_hash, hash_train=hash_train, ell=ell, index=index + 1
+        );
     }
 
     // Hashes a message to a field element
@@ -192,8 +190,8 @@ namespace HashToField32 {
         add_mod_ptr: ModBuiltin*,
         mul_mod_ptr: ModBuiltin*,
         sha256_ptr: felt*,
-        pow2_array: felt*
-    }(msg: felt*, msg_bytes_len: felt, count: felt) -> (fields: UInt384**){
+        pow2_array: felt*,
+    }(msg: felt*, msg_bytes_len: felt, count: felt) -> (fields: UInt384**) {
         alloc_locals;
 
         let n_bytes = count * CURVE_M * CURVE_L;
@@ -217,18 +215,20 @@ namespace HashToField32 {
     }(expanded_msg: felt*, count: felt, index: felt) {
         alloc_locals;
 
-        if(count == index){
+        if (count == index) {
             return ();
         }
-        
+
         let offset = index * CURVE_L_IN_FELTS * CURVE_M;
         let (fields: UInt384*) = alloc();
         with fields {
-            hash_to_field_inner_inner(expanded_msg=expanded_msg, count_index=index, degree_index=0, offset=offset);
+            hash_to_field_inner_inner(
+                expanded_msg=expanded_msg, count_index=index, degree_index=0, offset=offset
+            );
         }
         assert result_fields[index] = fields;
 
-        return hash_to_field_inner(expanded_msg=expanded_msg, count=count, index=index+1);
+        return hash_to_field_inner(expanded_msg=expanded_msg, count=count, index=index + 1);
     }
 
     // Innermost recursive function for hash_to_field
@@ -238,9 +238,9 @@ namespace HashToField32 {
         add_mod_ptr: ModBuiltin*,
         mul_mod_ptr: ModBuiltin*,
         pow2_array: felt*,
-        fields: UInt384*
+        fields: UInt384*,
     }(expanded_msg: felt*, count_index: felt, degree_index: felt, offset: felt) {
-        if (degree_index == CURVE_M){
+        if (degree_index == CURVE_M) {
             return ();
         }
 
@@ -248,7 +248,12 @@ namespace HashToField32 {
         // %{ print(hex(ids.result.d3 * 2**288 + ids.result.d2 * 2**192 + ids.result.d1 * 2**96 + ids.result.d0)) %}
         assert fields[degree_index] = result;
 
-        return hash_to_field_inner_inner(expanded_msg=expanded_msg, count_index=count_index, degree_index=degree_index+1, offset=offset + CURVE_L_IN_FELTS);
+        return hash_to_field_inner_inner(
+            expanded_msg=expanded_msg,
+            count_index=count_index,
+            degree_index=degree_index + 1,
+            offset=offset + CURVE_L_IN_FELTS,
+        );
     }
 
     // Converts a 512-bit byte array to UInt384 and calls u512_mod_p
@@ -256,25 +261,41 @@ namespace HashToField32 {
         range_check96_ptr: felt*,
         add_mod_ptr: ModBuiltin*,
         mul_mod_ptr: ModBuiltin*,
-        pow2_array: felt*
-    }(value: felt*) -> (result: UInt384){
+        pow2_array: felt*,
+    }(value: felt*) -> (result: UInt384) {
         let (p: UInt384) = get_P(1);
 
         let (result) = u512_mod_p(
-            low=(v0=value[8], v1=value[9], v2=value[10], v3=value[11], v4=value[12], v5=value[13], v6=value[14], v7=value[15]), 
-            high=(v0=value[0], v1=value[1], v2=value[2], v3=value[3], v4=value[4], v5=value[5], v6=value[6], v7=value[7]),
-            p=p
+            low=(
+                v0=value[8],
+                v1=value[9],
+                v2=value[10],
+                v3=value[11],
+                v4=value[12],
+                v5=value[13],
+                v6=value[14],
+                v7=value[15],
+            ),
+            high=(
+                v0=value[0],
+                v1=value[1],
+                v2=value[2],
+                v3=value[3],
+                v4=value[4],
+                v5=value[5],
+                v6=value[6],
+                v7=value[7],
+            ),
+            p=p,
         );
 
         return (result=result);
     }
 
     // XORs two 256-bit hashes
-    func _xor_hash_segments{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-        pow2_array: felt*
-    }(hash_a: felt*, hash_b: felt*) -> felt* {
+    func _xor_hash_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
+        hash_a: felt*, hash_b: felt*
+    ) -> felt* {
         alloc_locals;
 
         let hash_a_uint = HashUtils.chunks_to_uint256(hash_a);

@@ -14,29 +14,24 @@ namespace SHA256 {
         return (sha256_ptr=sha256_ptr, sha256_ptr_start=sha256_ptr_start);
     }
 
-    func finalize{
-        range_check_ptr,
-        bitwise_ptr: BitwiseBuiltin*,
-    }(sha256_start_ptr: felt*, sha256_end_ptr: felt*) {
+    func finalize{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}(
+        sha256_start_ptr: felt*, sha256_end_ptr: felt*
+    ) {
         finalize_sha256(sha256_start_ptr, sha256_end_ptr);
         return ();
     }
 
-    func hash_pair{
-        range_check_ptr,
-        sha256_ptr: felt*,
-        pow2_array: felt*
-    }(input: felt*) -> (output: felt*) {
+    func hash_pair{range_check_ptr, sha256_ptr: felt*, pow2_array: felt*}(input: felt*) -> (
+        output: felt*
+    ) {
         alloc_locals;
         let (output) = sha256(data=input, n_bytes=64);
         return (output=output);
     }
 
-    func hash_bytes{
-        range_check_ptr,
-        sha256_ptr: felt*,
-        pow2_array: felt*
-    }(input: felt*, n_bytes: felt) -> (output: felt*) {
+    func hash_bytes{range_check_ptr, sha256_ptr: felt*, pow2_array: felt*}(
+        input: felt*, n_bytes: felt
+    ) -> (output: felt*) {
         alloc_locals;
         let (output) = sha256(data=input, n_bytes=n_bytes);
         return (output=output);
@@ -44,10 +39,7 @@ namespace SHA256 {
 }
 
 namespace HashUtils {
-    func chunk_pair{
-        range_check_ptr,
-        pow2_array: felt*,
-    }(left: Uint256, right: Uint256) -> felt* {
+    func chunk_pair{range_check_ptr, pow2_array: felt*}(left: Uint256, right: Uint256) -> felt* {
         let (leafs: Uint256*) = alloc();
         assert leafs[0] = left;
         assert leafs[1] = right;
@@ -59,11 +51,9 @@ namespace HashUtils {
         return output_ptr;
     }
 
-    func chunk_leafs{
-        range_check_ptr,
-        pow2_array: felt*,
-        output_ptr: felt*
-    }(leafs: Uint256*, leafs_len: felt, index: felt) {
+    func chunk_leafs{range_check_ptr, pow2_array: felt*, output_ptr: felt*}(
+        leafs: Uint256*, leafs_len: felt, index: felt
+    ) {
         if (index == leafs_len) {
             return ();
         }
@@ -94,10 +84,7 @@ namespace HashUtils {
         return chunk_leafs(leafs=leafs + Uint256.SIZE, leafs_len=leafs_len, index=index + 1);
     }
 
-    func chunk_uint256{
-        range_check_ptr,
-        pow2_array: felt*
-    }(leaf: Uint256) -> (output: felt*) {
+    func chunk_uint256{range_check_ptr, pow2_array: felt*}(leaf: Uint256) -> (output: felt*) {
         let (output: felt*) = alloc();
 
         // Process left-high
@@ -124,8 +111,10 @@ namespace HashUtils {
     }
 
     func chunks_to_uint256{pow2_array: felt*}(output: felt*) -> Uint256 {
-        let low = [output + 4] * pow2_array[96] + [output + 5] * pow2_array[64] + [output + 6] * pow2_array[32] + [output + 7];
-        let high = [output] * pow2_array[96] + [output + 1] * pow2_array[64] + [output + 2] * pow2_array[32] + [output + 3];
+        let low = [output + 4] * pow2_array[96] + [output + 5] * pow2_array[64] + [output + 6] *
+            pow2_array[32] + [output + 7];
+        let high = [output] * pow2_array[96] + [output + 1] * pow2_array[64] + [output + 2] *
+            pow2_array[32] + [output + 3];
         return (Uint256(low=low, high=high));
     }
 }
@@ -134,7 +123,9 @@ const SHA256_INPUT_CHUNK_SIZE_FELTS = 16;
 const SHA256_STATE_SIZE_FELTS = 8;
 
 // Hash an arbitrary length of bytes. Input must be BE 32bit chunks
-func sha256{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(data: felt*, n_bytes: felt) -> (output: felt*) {
+func sha256{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(data: felt*, n_bytes: felt) -> (
+    output: felt*
+) {
     alloc_locals;
 
     // Maximum bytes_len is 2^32 - 1. This simplifies the padding calculation.
@@ -159,12 +150,14 @@ func sha256{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(data: felt*, 
     return (output=output);
 }
 
-func sha256_inner{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(data: felt*, n_bytes: felt, remaining_bytes: felt) {
+func sha256_inner{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(
+    data: felt*, n_bytes: felt, remaining_bytes: felt
+) {
     alloc_locals;
 
     // If we have > 64 bytes input, we need at least two blocks for the message alone (without padding)
     let (additional_message_blocks, _) = felt_divmod(remaining_bytes, 64);
-    if (additional_message_blocks == 0) {    
+    if (additional_message_blocks == 0) {
         let (n_full_words, local len_last_word) = felt_divmod(remaining_bytes, 4);
 
         // write the full input words to the sha256_ptr
@@ -186,17 +179,19 @@ func sha256_inner{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(data: f
             memset(dst=sha256_ptr + n_full_words + 1, value=0, n=14 - n_full_words);
             // append binary length
             assert sha256_ptr[15] = n_bytes * 8;
-            _sha256_chunk(); // fill outputs
+            _sha256_chunk();  // fill outputs
 
-            tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS + SHA256_STATE_SIZE_FELTS;
+            tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS +
+                SHA256_STATE_SIZE_FELTS;
             return ();
         } else {
             // 55 < msg.len < 64 -> We need two more blocks
-            
+
             // Fill current block with required padding
-            memset(dst=sha256_ptr + n_full_words + 1, value=0, n=15 - n_full_words); 
-            _sha256_chunk(); // fill outputs
-            tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS + SHA256_STATE_SIZE_FELTS;
+            memset(dst=sha256_ptr + n_full_words + 1, value=0, n=15 - n_full_words);
+            _sha256_chunk();  // fill outputs
+            tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS +
+                SHA256_STATE_SIZE_FELTS;
 
             // write the output to the state of the next block
             memcpy(dst=sha256_ptr + 24, src=sha256_ptr, len=8);
@@ -206,18 +201,18 @@ func sha256_inner{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(data: f
             memset(dst=sha256_ptr, value=0, n=15);
             assert sha256_ptr[15] = n_bytes * 8;
 
-            _sha256_chunk(); // fill outputs
-            tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS + SHA256_STATE_SIZE_FELTS;
+            _sha256_chunk();  // fill outputs
+            tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS +
+                SHA256_STATE_SIZE_FELTS;
 
             return ();
-
         }
     } else {
         // otherwise we fill the entire block with our input
         memcpy(dst=sha256_ptr, src=data, len=16);
-        _sha256_chunk(); // fill outputs
+        _sha256_chunk();  // fill outputs
         tempvar sha256_ptr = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS + SHA256_STATE_SIZE_FELTS;
-        
+
         // copy output to the state of the next block
         memcpy(dst=sha256_ptr + 24, src=sha256_ptr, len=8);
         tempvar sha256_ptr = sha256_ptr + SHA256_STATE_SIZE_FELTS;
