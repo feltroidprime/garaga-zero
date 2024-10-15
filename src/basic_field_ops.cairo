@@ -2,9 +2,14 @@ from starkware.cairo.common.cairo_builtins import UInt384
 from starkware.cairo.common.cairo_builtins import ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 
+const POW_2_32_252 = 0x100000000;
+const POW_2_64_252 = 0x10000000000000000;
+
 // Compute u512 mod p, where u512 = high * 2^256 + low
 func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(
-    low: UInt384, high: UInt384, p: UInt384
+    low: (v0: felt, v1: felt, v2: felt, v3: felt, v4: felt, v5: felt, v6: felt, v7: felt), 
+    high: (v0: felt, v1: felt, v2: felt, v3: felt, v4: felt, v5: felt, v6: felt, v7: felt), 
+    p: UInt384
 ) -> (result: UInt384) {
     let (_, pc) = get_fp_and_pc();
 
@@ -13,10 +18,10 @@ func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr:
     let mul_offsets_ptr = pc + (mul_offsets - pc_labelx);
 
     // High limbs.
-    assert [range_check96_ptr] = high.d0;
-    assert [range_check96_ptr + 1] = high.d1;
-    assert [range_check96_ptr + 2] = high.d2;
-    assert [range_check96_ptr + 3] = high.d3;
+    assert [range_check96_ptr] = high.v7 + high.v6 * POW_2_32_252 + high.v5 * POW_2_64_252;
+    assert [range_check96_ptr + 1] = high.v4 + high.v3 * POW_2_32_252 + high.v2 * POW_2_64_252;
+    assert [range_check96_ptr + 2] = high.v1 + high.v0 * POW_2_32_252;
+    assert [range_check96_ptr + 3] = 0;
 
     // Shift Limbs.
     assert [range_check96_ptr + 4] = 0;
@@ -25,10 +30,10 @@ func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr:
     assert [range_check96_ptr + 7] = 0;
 
     // Low limbs.
-    assert [range_check96_ptr + 8] = low.d0;
-    assert [range_check96_ptr + 9] = low.d1;
-    assert [range_check96_ptr + 10] = low.d2;
-    assert [range_check96_ptr + 11] = low.d3;
+    assert [range_check96_ptr + 8] = low.v7 + low.v6 * POW_2_32_252 + low.v5 * POW_2_64_252;
+    assert [range_check96_ptr + 9] = low.v4 + low.v3 * POW_2_32_252 + low.v2 * POW_2_64_252;
+    assert [range_check96_ptr + 10] = low.v1 + low.v0 * POW_2_32_252;
+    assert [range_check96_ptr + 11] = 0;
 
     assert add_mod_ptr[0] = ModBuiltin(
         p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=1
