@@ -188,6 +188,23 @@ func sub_ec_points{range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBu
 //   Q: The second point to add (G1Point)
 // Returns:
 //   res: The resulting point after addition (G1Point)
+func all_g1_g2_pairs_are_on_curve{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(input: felt*, n: felt, curve_id: felt) -> (res: felt) {
+    alloc_locals;
+    if (n == 0) {
+        return (res=TRUE);
+    } else {
+        let (check) = is_on_curve_g1_g2(curve_id, input);
+        if (check == TRUE) {
+            return all_g1_g2_pairs_are_on_curve(input + G1G2Pair.SIZE, n - 1, curve_id);
+        } else {
+            return (res=FALSE);
+        }
+    }
+}
+
+// Add two EC points. Doesn't check if the inputs are on curve nor if they are the point at infinity.
 func add_ec_points{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, P: G1Point, Q: G1Point) -> (res: G1Point) {
