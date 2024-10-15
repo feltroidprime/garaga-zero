@@ -4,17 +4,17 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.modulo import run_mod_p_circuit
 
 from definitions import get_P, BASE, N_LIMBS, is_curve_id_supported, SUPPORTED_CURVE_ID
-from utils import get_Z_and_RLC_from_transcript, write_felts_to_value_segment, retrieve_output
+from utils import write_felts_to_value_segment, retrieve_output, hash_efelt_transcript
 
 struct ExtensionFieldModuloCircuit {
     constants_ptr: felt*,
     add_offsets_ptr: felt*,
     mul_offsets_ptr: felt*,
     output_offsets_ptr: felt*,
-    poseidon_indexes_ptr: felt*,
     constants_ptr_len: felt,
     input_len: felt,
     commitments_len: felt,
+    big_Q_len: felt,
     witnesses_len: felt,
     output_len: felt,
     continuous_output: felt,
@@ -74,7 +74,7 @@ func run_modulo_circuit{
         circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
         # Convert the int value back to a string and print it
         circuit_name = ids.circuit.name.to_bytes((ids.circuit.name.bit_length() + 7) // 8, 'big').decode()
-        # print(f"circuit.name = {circuit_name}")
+        #print(f"circuit.name = {circuit_name}")
         circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
         # print(f"best_match = {circuit_id.name}")
         MOD_CIRCUIT = ALL_FUSTAT_CIRCUITS[circuit_id]['class'](ids.circuit.curve_id, auto_run=False)
@@ -153,14 +153,41 @@ func run_extension_field_modulo_circuit{
         #EXTF_MOD_CIRCUIT.print_value_segment()
     %}
 
-    let (local Z: felt, local RLC_coeffs: felt*) = get_Z_and_RLC_from_transcript(
-        transcript_start=cast(values_ptr, felt*) + circuit.constants_ptr_len * N_LIMBS,
-        poseidon_indexes_ptr=circuit.poseidon_indexes_ptr,
-        n_elements_in_transcript=(circuit.commitments_len + circuit.input_len) / N_LIMBS,
-        n_equations=circuit.N_Euclidean_equations,
-        init_hash=circuit.name,
+    let n_elmts_to_hash_without_Q = (
+        circuit.commitments_len + circuit.input_len - circuit.big_Q_len
+    ) / N_LIMBS;
+    %{ print(f"n_elmts_to_hash_without_Q = {ids.n_elmts_to_hash_without_Q}") %}
+
+    assert poseidon_ptr[0].input.s0 = circuit.name;
+    assert poseidon_ptr[0].input.s1 = 0;
+    assert poseidon_ptr[0].input.s2 = 1;
+
+    let poseidon_ptr = poseidon_ptr + PoseidonBuiltin.SIZE;
+
+    // The initial state is implicitely set up by the previous permutation just above.
+    let (local continuable_hash: felt, local c0: felt, local s2: felt) = hash_efelt_transcript(
+        limbs_ptr=cast(values_ptr, felt*) + circuit.constants_ptr_len * N_LIMBS,
+        n=n_elmts_to_hash_without_Q,
         curve_id=circuit.curve_id,
     );
+    %{ print(f"I C0 CAIRO: {hex(ids.c0)}") %}
+    // The intermediate state is already computed by the previous call to hash_efelt_transcript
+    // It is (continuable_hash, c0, s2)
+    let (local Z: felt, _, _) = hash_efelt_transcript(
+        limbs_ptr=cast(values_ptr, felt*) + (
+            circuit.constants_ptr_len + n_elmts_to_hash_without_Q
+        ) * N_LIMBS,
+        n=circuit.big_Q_len / N_LIMBS,
+        curve_id=circuit.curve_id,
+    );
+    // let (local Z: felt, local RLC_coeffs: felt*) = get_Z_and_RLC_from_transcript(
+    //     transcript_start=cast(values_ptr, felt*) + circuit.constants_ptr_len * N_LIMBS,
+    //     poseidon_indexes_ptr=circuit.poseidon_indexes_ptr,
+    //     n_elements_in_transcript=(circuit.commitments_len + circuit.input_len) / N_LIMBS,
+    //     n_equations=circuit.N_Euclidean_equations,
+    //     init_hash=circuit.name,
+    //     curve_id=circuit.curve_id,
+    // );
     %{ print(f"\tZ = Hash(Input|Commitments) = Poseidon({(ids.circuit.input_len+ids.circuit.commitments_len)//ids.N_LIMBS} * [Uint384]) computed") %}
     %{ print(f"\tN={ids.circuit.N_Euclidean_equations} felt252 from Poseidon transcript retrieved.") %}
 
@@ -172,9 +199,9 @@ func run_extension_field_modulo_circuit{
     tempvar range_check96_ptr = range_check96_ptr + circuit.constants_ptr_len * N_LIMBS +
         circuit.input_len + circuit.commitments_len + circuit.witnesses_len;
 
-    write_felts_to_value_segment(values_start=RLC_coeffs, n=circuit.N_Euclidean_equations);
+    write_felts_to_value_segment(values_start=&c0, n=1);
     write_felts_to_value_segment(values_start=&Z, n=1);
-    %{ print(f"\tZ and felt252 written to value segment") %}
+    %{ print(f"\tbase random coeff c0&Z written to value segment") %}
     %{ print(f"\tRunning ModuloBuiltin circuit...") %}
     run_mod_p_circuit(
         p=p,
@@ -249,13 +276,28 @@ func run_extension_field_modulo_circuit_continuation{
 
     %{ print(f"\tZ = Hash(Init_Hash|Commitments) = Poseidon(Init_Hash, Poseidon({(ids.circuit.commitments_len)//ids.N_LIMBS} * [Uint384])) computed") %}
 
-    let (local Z: felt, local RLC_coeffs: felt*) = get_Z_and_RLC_from_transcript(
-        transcript_start=cast(values_ptr, felt*) + circuit.constants_ptr_len * N_LIMBS +
-        circuit.input_len,
-        poseidon_indexes_ptr=circuit.poseidon_indexes_ptr,
-        n_elements_in_transcript=circuit.commitments_len / N_LIMBS,
-        n_equations=circuit.N_Euclidean_equations,
-        init_hash=init_hash,
+    let n_elmts_to_hash_without_Q = (circuit.commitments_len - circuit.big_Q_len) / N_LIMBS;
+
+    assert poseidon_ptr[0].input.s0 = init_hash;
+    assert poseidon_ptr[0].input.s1 = 0;
+    assert poseidon_ptr[0].input.s2 = 1;
+
+    let poseidon_ptr = poseidon_ptr + PoseidonBuiltin.SIZE;
+
+    // The initial state is implicitely set up by the previous permutation.
+
+    let start_hash_at = cast(values_ptr, felt*) + circuit.constants_ptr_len * N_LIMBS +
+        circuit.input_len;
+
+    let (local continuable_hash: felt, local c0: felt, local s2: felt) = hash_efelt_transcript(
+        limbs_ptr=start_hash_at, n=n_elmts_to_hash_without_Q, curve_id=circuit.curve_id
+    );
+    %{ print(f"II C0 CAIRO: {hex(ids.c0)}") %}
+    // The intermediate state is already computed by the previous call to hash_efelt_transcript
+    // It is (continuable_hash, c0, s2)
+    let (local Z: felt, _, _) = hash_efelt_transcript(
+        limbs_ptr=start_hash_at + n_elmts_to_hash_without_Q * N_LIMBS,
+        n=circuit.big_Q_len / N_LIMBS,
         curve_id=circuit.curve_id,
     );
 
@@ -267,9 +309,9 @@ func run_extension_field_modulo_circuit_continuation{
     tempvar range_check96_ptr = range_check96_ptr + circuit.constants_ptr_len * N_LIMBS +
         circuit.input_len + circuit.commitments_len + circuit.witnesses_len;
 
-    write_felts_to_value_segment(values_start=RLC_coeffs, n=circuit.N_Euclidean_equations);
+    write_felts_to_value_segment(values_start=&c0, n=1);
     write_felts_to_value_segment(values_start=&Z, n=1);
-    %{ print(f"\tZ and felt252 written to value segment") %}
+    %{ print(f"\tbase random coeff c0&Z written to value segment") %}
     %{ print(f"\tRunning ModuloBuiltin circuit...") %}
     run_mod_p_circuit(
         p=p,
