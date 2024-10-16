@@ -6,6 +6,7 @@ const POW_2_32_252 = 0x100000000;
 const POW_2_64_252 = 0x10000000000000000;
 
 // Compute u512 mod p, where u512 = high * 2^256 + low
+// Each high/low limb is 32 bits big and passed in BE
 func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(
     low: (v0: felt, v1: felt, v2: felt, v3: felt, v4: felt, v5: felt, v6: felt, v7: felt),
     high: (v0: felt, v1: felt, v2: felt, v3: felt, v4: felt, v5: felt, v6: felt, v7: felt),

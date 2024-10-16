@@ -21,7 +21,12 @@ namespace SHA256 {
         return ();
     }
 
-    func hash_pair{range_check_ptr, sha256_ptr: felt*, pow2_array: felt*}(input: felt*) -> (
+    // Computes the SHA256 hash of a 64 byte input
+    // Inputs:
+    //   input: felt* - the 64 byte input, chunked into 32bit BE chunks. Must have a length of 16.
+    // Outputs:
+    //   output: felt* - an array of 32bit BE chunks. Must have a length of 8.
+    func hash_64{range_check_ptr, sha256_ptr: felt*, pow2_array: felt*}(input: felt*) -> (
         output: felt*
     ) {
         alloc_locals;
@@ -29,6 +34,12 @@ namespace SHA256 {
         return (output=output);
     }
 
+    // Computes the SHA256 hash of an arbitrary length of bytes
+    // Inputs:
+    //   input: felt* - the input bytes, chunked into 32bit BE chunks.
+    //   n_bytes: felt - the number of bytes in the input
+    // Outputs:
+    //   output: felt* - an array of 32bit BE chunks. Must have a length of 8.
     func hash_bytes{range_check_ptr, sha256_ptr: felt*, pow2_array: felt*}(
         input: felt*, n_bytes: felt
     ) -> (output: felt*) {

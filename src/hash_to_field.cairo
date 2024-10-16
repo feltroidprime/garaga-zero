@@ -180,9 +180,10 @@ namespace HashToField32 {
     // - msg: a byte string containing the message to hash, chunked in big-endian 4-bytes
     // - msg_bytes_len: length of the message in bytes
     // - count: the number of field elements to output
+    // - ext_degree: the degree of the extension field
     //
     // Returns:
-    // - fields: an array of field elements [u_0, ..., u_(count - 1)]
+    // - fields: an 2d array of field elements in the following format [[f_n; ext_degree]; count]]
     func hash_to_field{
         range_check_ptr,
         bitwise_ptr: BitwiseBuiltin*,
@@ -191,13 +192,13 @@ namespace HashToField32 {
         mul_mod_ptr: ModBuiltin*,
         sha256_ptr: felt*,
         pow2_array: felt*,
-    }(msg: felt*, msg_bytes_len: felt, count: felt) -> (fields: UInt384**) {
+    }(msg: felt*, msg_bytes_len: felt, count: felt, ext_degree: felt) -> (fields: UInt384**) {
         alloc_locals;
 
-        let n_bytes = count * CURVE_M * CURVE_L;
+        let n_bytes = count * ext_degree * CURVE_L;
         let (result) = expand_msg_xmd(msg=msg, msg_bytes_len=msg_bytes_len, n_bytes=n_bytes);
         let (result_fields: UInt384**) = alloc();
-        with result_fields {
+        with result_fields, ext_degree {
             hash_to_field_inner(expanded_msg=result, count=count, index=0);
         }
 
@@ -211,6 +212,7 @@ namespace HashToField32 {
         add_mod_ptr: ModBuiltin*,
         mul_mod_ptr: ModBuiltin*,
         pow2_array: felt*,
+        ext_degree: felt,
         result_fields: UInt384**,
     }(expanded_msg: felt*, count: felt, index: felt) {
         alloc_locals;
@@ -219,9 +221,9 @@ namespace HashToField32 {
             return ();
         }
 
-        let offset = index * CURVE_L_IN_FELTS * CURVE_M;
+        let offset = index * CURVE_L_IN_FELTS * ext_degree;
         let (fields: UInt384*) = alloc();
-        with fields {
+        with fields, ext_degree {
             hash_to_field_inner_inner(
                 expanded_msg=expanded_msg, count_index=index, degree_index=0, offset=offset
             );
@@ -232,20 +234,25 @@ namespace HashToField32 {
     }
 
     // Innermost recursive function for hash_to_field
-    // Runs CURVE_M times (degree of the extension field)
+    // Runs ext_degree times
     func hash_to_field_inner_inner{
         range_check96_ptr: felt*,
         add_mod_ptr: ModBuiltin*,
         mul_mod_ptr: ModBuiltin*,
         pow2_array: felt*,
+        ext_degree: felt,
         fields: UInt384*,
     }(expanded_msg: felt*, count_index: felt, degree_index: felt, offset: felt) {
-        if (degree_index == CURVE_M) {
+        if (degree_index == ext_degree) {
             return ();
         }
 
         let (result) = _u512_mod_p(expanded_msg + offset);
-        // %{ print(hex(ids.result.d3 * 2**288 + ids.result.d2 * 2**192 + ids.result.d1 * 2**96 + ids.result.d0)) %}
+        // %{
+        //     from garaga.hints.io import bigint_pack
+        //     result = bigint_pack(ids.result, 4, 2**96)
+        //     print(hex(result))
+        // %}
         assert fields[degree_index] = result;
 
         return hash_to_field_inner_inner(
@@ -257,6 +264,10 @@ namespace HashToField32 {
     }
 
     // Converts a 512-bit byte array to UInt384 and calls u512_mod_p
+    // Inputs:
+    //   value: felt* - an array of 32bit BE chunks. Must have a length of 16.
+    // Outputs:
+    //   result: UInt384 - The result of (value mod p), where p is the BLS12-381 field modulus
     func _u512_mod_p{
         range_check96_ptr: felt*,
         add_mod_ptr: ModBuiltin*,
@@ -293,6 +304,11 @@ namespace HashToField32 {
     }
 
     // XORs two 256-bit hashes
+    // Inputs:
+    //   hash_a: felt* - an array of 32bit BE chunks. Must have a length of 8.
+    //   hash_b: felt* - an array of 32bit BE chunks. Must have a length of 8.
+    // Outputs:
+    //   result: felt* - XOR of the input, as 32bit BE chunks with length 8.
     func _xor_hash_segments{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, pow2_array: felt*}(
         hash_a: felt*, hash_b: felt*
     ) -> felt* {

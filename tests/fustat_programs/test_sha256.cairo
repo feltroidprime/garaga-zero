@@ -64,7 +64,6 @@ func run_test{range_check_ptr, bitwise_ptr: BitwiseBuiltin*, sha256_ptr: felt*, 
             return chunks
 
 
-
         preimage = int(preimages[ids.index], 16)
         ids.n_bytes = (preimage.bit_length() + 7) // 8
 
