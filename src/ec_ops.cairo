@@ -12,7 +12,13 @@ from definitions import (
     TRUE,
     FALSE,
 )
-from basic_field_ops import is_eq_mod_p, is_opposite_mod_p, is_zero_mod_p, assert_eq_mod_p
+from basic_field_ops import (
+    is_eq_mod_p,
+    is_opposite_mod_p,
+    is_zero_mod_p,
+    assert_eq_mod_p,
+    sub_mod_p,
+)
 
 from precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_G2_circuit,
@@ -42,6 +48,12 @@ from utils import (
     hash_efelt_transcript,
 )
 
+// Checks if a given point is on the G1 curve for the specified curve_id
+// Parameters:
+//   curve_id: The ID of the elliptic curve
+//   point: The G1Point to check
+// Returns:
+//   res: 1 if the point is on the curve, 0 otherwise
 func is_on_curve_g1{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, point: G1Point) -> (res: felt) {
@@ -98,6 +110,27 @@ func is_on_curve_g1_g2{
     return (res=1);
 }
 
+// Subtract two EC points
+// This function doesn't check if the inputs are on the curve or if they are the point at infinity
+// Parameters:
+//   curve_id: The ID of the elliptic curve being used
+//   p: The first G1Point (minuend)
+//   q: The second G1Point (subtrahend)
+// Returns:
+//   res: The result of p - q as a G1Point
+func sub_ec_points{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(curve_id: felt, p: G1Point, q: G1Point) -> (res: G1Point) {
+    alloc_locals;
+    // Negate the second point
+    let (curve_p) = get_P(curve_id);
+    let (neg_Q_Y) = sub_mod_p(curve_p, q.y, curve_p);  // -Q.y = P - Q.y
+    let neg_Q = G1Point(q.x, neg_Q_Y);
+    // Add the first point to the negated second point
+    let (result) = add_ec_points(curve_id, p, neg_Q);
+    return (res=result);
+}
+
 func all_g1_g2_pairs_are_on_curve{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(input: felt*, n: felt, curve_id: felt) -> (res: felt) {
@@ -127,8 +160,10 @@ func add_ec_points{
         let (opposite_y) = is_opposite_mod_p(P.y, Q.y, modulus);
 
         if (opposite_y != 0) {
+            // P + (-P) = O (point at infinity)
             return (res=G1Point(UInt384(0, 0, 0, 0), UInt384(0, 0, 0, 0)));
         } else {
+            // P = Q, so we need to double the point
             let (circuit) = get_DOUBLE_EC_POINT_circuit(curve_id);
             let (A) = get_a(curve_id);
             let (input: UInt384*) = alloc();
@@ -139,6 +174,7 @@ func add_ec_points{
             return (res=[cast(res, G1Point*)]);
         }
     } else {
+        // P and Q have different x-coordinates, perform regular addition
         let (circuit) = get_ADD_EC_POINT_circuit(curve_id);
         let (input: UInt384*) = alloc();
         assert input[0] = P.x;
