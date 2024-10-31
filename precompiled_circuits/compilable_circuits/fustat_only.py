@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from random import randint
 
-from garaga.definitions import CURVES, STARK, CurveID, G1Point, G2Point, get_base_field
+from garaga.definitions import CURVES, STARK, CurveID, G1Point, G2Point, ISOGENY_MAP_G2
 from garaga.extension_field_modulo_circuit import ExtensionFieldModuloCircuit
-from garaga.hints.io import bigint_split, int_to_u384
+import garaga.modulo_circuit_structs as structs
 
 from garaga.modulo_circuit import WriteOps
 from garaga.precompiled_circuits import (
@@ -241,23 +240,63 @@ class MultiPairingCheck(BaseEXTFCircuit):
 
         return circuit
     
-@dataclass(slots=True)
-class MapToCurveHint:
-    gx1_is_square: bool
-    y1: PyFelt
-    y_flag: bool
+class IsogenyMapG2Circuit(ModuloCircuit):
+    def __init__(self, curve_id: int, compilation_mode: int = 0):
+        super().__init__(
+            name="bls12_381_isogeny_map_g2",
+            curve_id=curve_id,
+            compilation_mode=compilation_mode,
+            generic_circuit=True,
+        )
+        self.curve = CURVES[curve_id]
+        if auto_run:
+            self.input = self.build_input()
+            self.circuit: ModuloCircuit = self._run_circuit_inner(self.input.copy())
 
-    def to_cairo(self) -> str:
-        return f"MapToCurveHint {{ gx1_is_square: {str(self.gx1_is_square).lower()}, y1: {int_to_u384(self.y1.value, as_hex=True)}, y_flag: {str(self.y_flag).lower()} }}"
+    def build_input(self) -> list[PyFelt]:
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
 
-    def to_calldata(self) -> list[int]:
-        cd = []
-        cd.append(int(self.gx1_is_square))
-        cd.extend(bigint_split(self.y1.value))
-        cd.append(int(self.y_flag))
-        return cd
+    def set_consts(self):
+        # Isogeny map constants
+        iso_map = ISOGENY_MAP_G2[self.curve_id]
+
+        self.iso_x_num = [[self.write_element(self.field(x[0])), self.write_element(self.field(x[1]))] for x in iso_map["x_map_num"]]
+        self.iso_x_den = [[self.write_element(self.field(x[0])), self.write_element(self.field(x[1]))] for x in iso_map["x_map_den"]]
+        self.iso_y_num = [[self.write_element(self.field(x[0])), self.write_element(self.field(x[1]))] for x in iso_map["y_map_num"]]
+        self.iso_y_den = [[self.write_element(self.field(x[0])), self.write_element(self.field(x[1]))] for x in iso_map["y_map_den"]]
+        
+   
+    def _run_circuit_inner(self, x: list[ModuloCircuitElement], y: list[ModuloCircuitElement]):
+        circuit = ModuloCircuit(
+            self.name,
+            self.curve_id,
+            generic_circuit=True,
+            compilation_mode=self.compilation_mode,
+        )
+
+        p_x = self.write_elements([x[0].felt, x[1].felt], WriteOps.INPUT)
+        p_y = self.write_elements([y[0].felt, y[1].felt], WriteOps.INPUT)
+
+        x_affine_num = self.fp2_eval_horner(self.iso_x_num, p_x, "x_num")
+        x_affine_den = self.fp2_eval_horner(self.iso_x_den, p_x, "x_den")
+        x_affine = self.fp2_div(x_affine_num, x_affine_den)
+        y_affine_num = self.fp2_eval_horner(self.iso_y_num, p_x, "y_num")
+        y_affine_den = self.fp2_eval_horner(self.iso_y_den, p_x, "y_den")
+        y_affine_eval = self.fp2_div(y_affine_num, y_affine_den)
+        y_affine = self.fp2_mul(y_affine_eval, p_y)
+
+        print(f"x_affine: {x_affine}")
+        print(f"y_affine: {y_affine}")
 
 
+        circuit.extend_struct_output(
+            structs.G2PointCircuit(name="res", elmts=[x_affine[0], x_affine[1], y_affine[0], y_affine[1]])
+        )
+
+        # circuit.finalize_circuit()
+
+        return circuit
+    
 class MapToCurveCircuit(ModuloCircuit):
     def __init__(self, name: str, curve_id: int, compilation_mode: int = 0):
         super().__init__(
@@ -344,8 +383,7 @@ class MapToCurveCircuit(ModuloCircuit):
             )
         )
 
-        print(f"x_affine: {x_affine}")
-        print(f"y_affine: {y_affine}")
+        return (x_affine, y_affine)
 
 
     def _map_to_curve_inner_1(self, field: list[ModuloCircuitElement]):
@@ -399,4 +437,30 @@ if __name__ == "__main__":
     # Set the constants for BLS12-381 G2 curve
     
     circuit.set_consts()
-    circuit.map_to_curve(circuit.field(0x18b90e7987b9393d878786da78fa13fd135aa063454c6023e1fbafd896f89df9))
+    print("Mapping to curve")
+    x, y = circuit.map_to_curve(circuit.field(0x18b90e7987b9393d878786da78fa13fd135aa063454c6023e1fbafd896f89df9))
+    print(f"x: {x}")
+    print(f"y: {y}")
+    iso = Bls12_381IsogenyMapG2(1)
+    iso.set_consts()
+    iso._run_circuit_inner(x, y)
+
+
+
+
+# x3 Fp2 {
+#   c0: Fp {
+#     value: 1372134176899860246244028516176065174866312977811315874569338461204206165587225531748079341806405957630388037148009n
+#   },
+#   c1: Fp {
+#     value: 1675787217455407539471851906599310197818787504174977641596286786595904597312088147111339379080022864241847095389122n
+#   }
+# }
+# y3 Fp2 {
+#   c0: Fp {
+#     value: 3711533319878567715055713840509005867072034515100332812742479883189714261245212038232516066280029143524678170330340n
+#   },
+#   c1: Fp {
+#     value: 3141422123896915690912042140687125495903819382357920373233870178540155061525451021134201937269664919097938688977016n
+#   }
+# }
