@@ -24,13 +24,15 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     SlopeInterceptSamePointCircuit,
 )
 from precompiled_circuits.compilable_circuits.fustat_only import (
-    IsogenyMapG2Circuit,
     DerivePointFromXCircuit,
     FinalExpPart1Circuit,
     FinalExpPart2Circuit,
     FP12MulCircuit,
     MultiMillerLoop,
     MultiPairingCheck,
+    MapToCurveG2Part1Circuit,
+    MapToCurveG2FinalizeQuadResCircuit,
+    MapToCurveG2FinalizeNonQuadResCircuit,
 )
 
 
@@ -73,8 +75,9 @@ class CircuitID(Enum):
     MP_CHECK_FINALIZE_BLS = int.from_bytes(b"mp_check_finalize_bls", "big")
     FP12_MUL_ASSERT_ONE = int.from_bytes(b"fp12_mul_assert_one", "big")
     EVAL_E12D = int.from_bytes(b"eval_e12d", "big")
-    MAP_TO_CURVE_G2 = int.from_bytes(b"map_to_curve_g2", "big")
-
+    MAP_TO_CURVE_G2_PART_1 = int.from_bytes(b"map_to_curve_g2_first_step", "big")
+    MAP_TO_CURVE_G2_FIN_QUAD = int.from_bytes(b"map_to_curve_g2_fin_quad", "big")
+    MAP_TO_CURVE_G2_FIN_NON_QUAD = int.from_bytes(b"map_to_curve_g2_fin_non_quad", "big")
 
 def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
     try:
@@ -101,96 +104,106 @@ def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
 
 # All the circuits that are going to be compiled to Cairo Zero.
 ALL_FUSTAT_CIRCUITS = {
-    # CircuitID.DUMMY: {"class": DummyCircuit, "params": None, "filename": "dummy"},
-    # CircuitID.IS_ON_CURVE_G1_G2: {
-    #     "class": IsOnCurveG1G2Circuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.IS_ON_CURVE_G1: {
-    #     "class": IsOnCurveG1Circuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
+    CircuitID.DUMMY: {"class": DummyCircuit, "params": None, "filename": "dummy"},
+    CircuitID.IS_ON_CURVE_G1_G2: {
+        "class": IsOnCurveG1G2Circuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.IS_ON_CURVE_G1: {
+        "class": IsOnCurveG1Circuit,
+        "params": None,
+        "filename": "ec",
+    },
     CircuitID.DERIVE_POINT_FROM_X: {
         "class": DerivePointFromXCircuit,
         "params": None,
         "filename": "ec",
     },
-    # CircuitID.SLOPE_INTERCEPT_SAME_POINT: {
-    #     "class": SlopeInterceptSamePointCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.ACC_EVAL_POINT_CHALLENGE_SIGNED: {
-    #     "class": AccumulateEvalPointChallengeSignedCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.RHS_FINALIZE_ACC: {
-    #     "class": RHSFinalizeAccCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.EVAL_FUNCTION_CHALLENGE_DUPL: {
-    #     "class": EvalFunctionChallengeDuplCircuit,
-    #     "params": [{"n_points": k} for k in [1, 2, 3, 4]],
-    #     "filename": "ec",
-    # },
-    # CircuitID.INIT_FUNCTION_CHALLENGE_DUPL: {
-    #     "class": InitFunctionChallengeDuplCircuit,
-    #     "params": [{"n_points": k} for k in [5]],
-    #     "filename": "ec",
-    # },
-    # CircuitID.ACC_FUNCTION_CHALLENGE_DUPL: {
-    #     "class": AccumulateFunctionChallengeDuplCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.FINALIZE_FUNCTION_CHALLENGE_DUPL: {
-    #     "class": FinalizeFunctionChallengeDuplCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.FP12_MUL: {
-    #     "class": FP12MulCircuit,
-    #     "params": None,
-    #     "filename": "extf_mul",
-    # },
-    # CircuitID.FINAL_EXP_PART_1: {
-    #     "class": FinalExpPart1Circuit,
-    #     "params": None,
-    #     "filename": "final_exp",
-    # },
-    # CircuitID.FINAL_EXP_PART_2: {
-    #     "class": FinalExpPart2Circuit,
-    #     "params": None,
-    #     "filename": "final_exp",
-    # },
-    # CircuitID.MULTI_MILLER_LOOP: {
-    #     "class": MultiMillerLoop,
-    #     "params": [{"n_pairs": k} for k in [1, 2, 3]],
-    #     "filename": "multi_miller_loop",
-    # },
+    CircuitID.SLOPE_INTERCEPT_SAME_POINT: {
+        "class": SlopeInterceptSamePointCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.ACC_EVAL_POINT_CHALLENGE_SIGNED: {
+        "class": AccumulateEvalPointChallengeSignedCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.RHS_FINALIZE_ACC: {
+        "class": RHSFinalizeAccCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.EVAL_FUNCTION_CHALLENGE_DUPL: {
+        "class": EvalFunctionChallengeDuplCircuit,
+        "params": [{"n_points": k} for k in [1, 2, 3, 4]],
+        "filename": "ec",
+    },
+    CircuitID.INIT_FUNCTION_CHALLENGE_DUPL: {
+        "class": InitFunctionChallengeDuplCircuit,
+        "params": [{"n_points": k} for k in [5]],
+        "filename": "ec",
+    },
+    CircuitID.ACC_FUNCTION_CHALLENGE_DUPL: {
+        "class": AccumulateFunctionChallengeDuplCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.FINALIZE_FUNCTION_CHALLENGE_DUPL: {
+        "class": FinalizeFunctionChallengeDuplCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.FP12_MUL: {
+        "class": FP12MulCircuit,
+        "params": None,
+        "filename": "extf_mul",
+    },
+    CircuitID.FINAL_EXP_PART_1: {
+        "class": FinalExpPart1Circuit,
+        "params": None,
+        "filename": "final_exp",
+    },
+    CircuitID.FINAL_EXP_PART_2: {
+        "class": FinalExpPart2Circuit,
+        "params": None,
+        "filename": "final_exp",
+    },
+    CircuitID.MULTI_MILLER_LOOP: {
+        "class": MultiMillerLoop,
+        "params": [{"n_pairs": k} for k in [1, 2, 3]],
+        "filename": "multi_miller_loop",
+    },
     CircuitID.MULTI_PAIRING_CHECK: {
         "class": MultiPairingCheck,
         "params": [{"n_pairs": k} for k in [2, 3]],
         "filename": "multi_pairing_check",
     },
-    # CircuitID.ADD_EC_POINT: {
-    #     "class": AddECPointCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    # CircuitID.DOUBLE_EC_POINT: {
-    #     "class": DoubleECPointCircuit,
-    #     "params": None,
-    #     "filename": "ec",
-    # },
-    CircuitID.MAP_TO_CURVE_G2: {
-        "class": IsogenyMapG2Circuit,
+    CircuitID.ADD_EC_POINT: {
+        "class": AddECPointCircuit,
         "params": None,
-        "filename": "utils",
+        "filename": "ec",
+    },
+    CircuitID.DOUBLE_EC_POINT: {
+        "class": DoubleECPointCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.MAP_TO_CURVE_G2_PART_1: {
+        "class": MapToCurveG2Part1Circuit,
+        "params": None,
+        "filename": "map_to_curve_g2",
+    },
+    CircuitID.MAP_TO_CURVE_G2_FIN_QUAD: {
+        "class": MapToCurveG2FinalizeQuadResCircuit,
+        "params": None,
+        "filename": "map_to_curve_g2",
+    },
+    CircuitID.MAP_TO_CURVE_G2_FIN_NON_QUAD: {
+        "class": MapToCurveG2FinalizeNonQuadResCircuit,
+        "params": None,
+        "filename": "map_to_curve_g2",
     },
 }
 
@@ -346,8 +359,6 @@ def main(
             compilation_mode=compilation_mode,
             **(params[0] if params else {}),
         )
-
-        print(f"temp_instance = {temp_instance}")
 
         if temp_instance.circuit.generic_circuit:
             # Handle generic circuits (keep selector function and all in one file)
