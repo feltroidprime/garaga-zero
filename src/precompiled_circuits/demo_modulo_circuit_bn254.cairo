@@ -6,8 +6,7 @@ from modulo_circuit import (
     get_void_extension_field_modulo_circuit,
 )
 from definitions import bn, bls
-
-func get_DERIVE_POINT_FROM_X_circuit(curve_id: felt) -> (circuit: ModuloCircuit*) {
+func get_BN254_DEMO_MODULO_CIRCUIT_circuit() -> (circuit: ModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (constants_ptr: felt*) = get_label_location(constants_ptr_loc);
@@ -15,15 +14,15 @@ func get_DERIVE_POINT_FROM_X_circuit(curve_id: felt) -> (circuit: ModuloCircuit*
     let (mul_offsets_ptr: felt*) = get_label_location(mul_offsets_ptr_loc);
     let (output_offsets_ptr: felt*) = get_label_location(output_offsets_ptr_loc);
     let constants_ptr_len = 0;
-    let input_len = 16;
-    let witnesses_len = 8;
-    let output_len = 20;
-    let continuous_output = 0;
-    let add_mod_n = 2;
-    let mul_mod_n = 6;
+    let input_len = 4;
+    let witnesses_len = 0;
+    let output_len = 4;
+    let continuous_output = 1;
+    let add_mod_n = 1;
+    let mul_mod_n = 1;
     let n_assert_eq = 0;
-    let name = 'derive_point_from_x';
-    let curve_id = curve_id;
+    let name = 'demo_modulo_circuit';
+    let curve_id = 0;
     local circuit: ModuloCircuit = ModuloCircuit(
         constants_ptr,
         add_offsets_ptr,
@@ -45,37 +44,15 @@ func get_DERIVE_POINT_FROM_X_circuit(curve_id: felt) -> (circuit: ModuloCircuit*
     constants_ptr_loc:
 
     add_offsets_ptr_loc:
-    dw 32;  // None
-    dw 8;
-    dw 36;
-    dw 28;  // None
-    dw 36;
-    dw 40;
+    dw 0;  // None
+    dw 0;
+    dw 4;
 
     mul_offsets_ptr_loc:
-    dw 0;  // None
-    dw 0;
-    dw 24;
-    dw 0;  // None
-    dw 24;
-    dw 28;
     dw 4;  // None
-    dw 0;
-    dw 32;
-    dw 12;  // None
-    dw 40;
-    dw 44;
-    dw 16;  // None
-    dw 16;
-    dw 48;
-    dw 20;  // None
-    dw 20;
-    dw 52;
+    dw 4;
+    dw 8;
 
     output_offsets_ptr_loc:
-    dw 40;
-    dw 44;
-    dw 48;
-    dw 52;
-    dw 16;
+    dw 4;
 }

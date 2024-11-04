@@ -18,6 +18,7 @@ from garaga.precompiled_circuits.compilable_circuits.base import (
     PyFelt,
 )
 from garaga.precompiled_circuits.map_to_curve import MapToCurveG2
+from garaga.precompiled_circuits.isogeny import IsogenyG2
 from garaga.precompiled_circuits.ec import DerivePointFromX
 from garaga.algebra import Fp2
 
@@ -348,3 +349,28 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
         circuit.extend_output(intermediate_values[1]) # y_affine
         
         return circuit
+    
+class IsogenyG2Circuit(BaseModuloCircuit):
+    def __init__(self, curve_id: int, compilation_mode: int = 0):
+        super().__init__(
+            name="isogeny_g2",
+            curve_id=curve_id,
+            compilation_mode=compilation_mode,
+        )
+
+    def build_input(self) -> list[PyFelt]:
+        return [self.field(randint(0, 1000000)), self.field(0), self.field(randint(0, 1000000)), self.field(0)]
+    
+    def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
+        circuit = IsogenyG2(    
+            self.name,
+            self.curve_id,
+            compilation_mode=self.compilation_mode,
+        )
+
+        px, py = circuit.write_struct(structs.G2PointCircuit(name="pt", elmts=input))
+        affine_x, affine_y = circuit.run_isogeny_g2(px, py)
+
+        circuit.extend_struct_output(
+            structs.G2PointCircuit(name="res", elmts=[affine_x[0], affine_x[1], affine_y[0], affine_y[1]])
+        )

@@ -33,6 +33,7 @@ from precompiled_circuits.compilable_circuits.fustat_only import (
     MapToCurveG2Part1Circuit,
     MapToCurveG2FinalizeQuadResCircuit,
     MapToCurveG2FinalizeNonQuadResCircuit,
+    IsogenyG2Circuit,
 )
 
 
@@ -78,6 +79,7 @@ class CircuitID(Enum):
     MAP_TO_CURVE_G2_PART_1 = int.from_bytes(b"map_to_curve_g2_first_step", "big")
     MAP_TO_CURVE_G2_FIN_QUAD = int.from_bytes(b"map_to_curve_g2_fin_quad", "big")
     MAP_TO_CURVE_G2_FIN_NON_QUAD = int.from_bytes(b"map_to_curve_g2_fin_non_quad", "big")
+    ISOGENY_G2 = int.from_bytes(b"isogeny_g2", "big")
 
 def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
     try:
@@ -204,6 +206,11 @@ ALL_FUSTAT_CIRCUITS = {
         "class": MapToCurveG2FinalizeNonQuadResCircuit,
         "params": None,
         "filename": "map_to_curve_g2",
+    },
+    CircuitID.ISOGENY_G2: {
+        "class": IsogenyG2Circuit,
+        "params": None,
+        "filename": "isogeny_g2",
     },
 }
 
