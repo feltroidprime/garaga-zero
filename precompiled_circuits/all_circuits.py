@@ -217,12 +217,12 @@ ALL_FUSTAT_CIRCUITS = {
         "filename": "map_to_curve_g2",
         "curve_ids": [CurveID.BLS12_381],
     },
-    # CircuitID.ISOGENY_G2: {
-    #     "class": IsogenyG2Circuit,
-    #     "params": None,
-    #     "filename": "isogeny_g2",
-    #     "curve_ids": [CurveID.BLS12_381],
-    # },
+    CircuitID.ISOGENY_G2: {
+        "class": IsogenyG2Circuit,
+        "params": None,
+        "filename": "isogeny_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
 }
 
 
@@ -373,7 +373,7 @@ def main(
         params = circuit_info["params"]
         print(f"id: {circuit_id}, params: {params}")
         temp_instance = circuit_class(
-            curve_id=CurveID.BN254.value,
+            curve_id=circuit_info.get("curve_ids", [CurveID.BN254])[0].value,
             compilation_mode=compilation_mode,
             **(params[0] if params else {}),
         )
@@ -384,7 +384,9 @@ def main(
             if filename not in compiled_files:
                 compiled_files[filename] = {"circuits": set(), "selectors": set()}
 
-            for curve_id in [CurveID.BN254, CurveID.BLS12_381]:
+            for curve_id in circuit_info.get(
+                "curve_ids", [CurveID.BN254, CurveID.BLS12_381]
+            ):
                 circuits, selectors = compile_circuit(
                     curve_id, circuit_class, circuit_id, params, compilation_mode
                 )
@@ -393,7 +395,9 @@ def main(
 
         else:
             # Handle non-generic circuits (separate files for each)
-            for curve_id in [CurveID.BN254, CurveID.BLS12_381]:
+            for curve_id in circuit_info.get(
+                "curve_ids", [CurveID.BN254, CurveID.BLS12_381]
+            ):
                 if params is None:
                     params = [None]
                 for param in params:
