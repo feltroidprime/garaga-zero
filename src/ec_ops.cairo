@@ -1,6 +1,7 @@
 from definitions import (
     get_P,
     G1Point,
+    G2Point,
     get_b,
     get_a,
     get_b2,
@@ -29,6 +30,7 @@ from precompiled_circuits.ec import (
     get_RHS_FINALIZE_ACC_circuit,
     get_EVAL_FUNCTION_CHALLENGE_DUPL_circuit,
     get_ADD_EC_POINT_circuit,
+    get_ADD_EC_POINT_G2_circuit,
     get_DOUBLE_EC_POINT_circuit,
 )
 from starkware.cairo.common.uint256 import Uint256
@@ -184,6 +186,28 @@ func add_ec_points{
         let (res) = run_modulo_circuit(circuit, cast(input, felt*));
         return (res=[cast(res, G1Point*)]);
     }
+}
+
+// Unoptimized version of add_ec_points for G2
+// ToDo: add double point for G2 for improved performance
+func add_ec_points_g2{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(curve_id: felt, P: G2Point, Q: G2Point) -> (res: G2Point) {
+    alloc_locals;
+
+    let (circuit) = get_ADD_EC_POINT_G2_circuit(curve_id);
+    let (input: UInt384*) = alloc();
+    assert input[0] = P.x0;
+    assert input[1] = P.x1;
+    assert input[2] = P.y0;
+    assert input[3] = P.y1;
+    assert input[4] = Q.x0;
+    assert input[5] = Q.x1;
+    assert input[6] = Q.y0;
+    assert input[7] = Q.y1;
+
+    let (output: felt*) = run_modulo_circuit(circuit, cast(input, felt*));
+    return (res=[cast(output, G2Point*)]);
 }
 
 struct DerivePointFromXOutput {

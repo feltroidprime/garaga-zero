@@ -1,6 +1,6 @@
 from random import randint
 
-from garaga.definitions import CURVES, STARK, CurveID, G1Point, G2Point, ISOGENY_MAP_G2
+from garaga.definitions import CURVES, STARK, CurveID, G1Point, G2Point
 from garaga.extension_field_modulo_circuit import ExtensionFieldModuloCircuit
 import garaga.modulo_circuit_structs as structs
 
@@ -17,6 +17,7 @@ from garaga.precompiled_circuits.compilable_circuits.base import (
     ModuloCircuitElement,
     PyFelt,
 )
+from garaga.precompiled_circuits.ec import BasicECG2
 from garaga.precompiled_circuits.map_to_curve import MapToCurveG2
 from garaga.precompiled_circuits.isogeny import IsogenyG2
 from garaga.precompiled_circuits.ec import DerivePointFromX
@@ -64,11 +65,11 @@ class FP12MulCircuit(BaseEXTFCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            "fp12_mul", 24, curve_id, auto_run, init_hash, compilation_mode
+            "fp12_mul", curve_id, auto_run, init_hash, compilation_mode
         )
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(24)]
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit = ExtensionFieldModuloCircuit(
@@ -96,11 +97,11 @@ class FinalExpPart1Circuit(BaseEXTFCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            "final_exp_part_1", 12, curve_id, auto_run, init_hash, compilation_mode
+            "final_exp_part_1", curve_id, auto_run, init_hash, compilation_mode
         )
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(12)]
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit: final_exp.FinalExpTorusCircuit = final_exp.GaragaFinalExp[
@@ -128,11 +129,11 @@ class FinalExpPart2Circuit(BaseEXTFCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            "final_exp_part_2", 12, curve_id, auto_run, init_hash, compilation_mode
+            "final_exp_part_2", curve_id, auto_run, init_hash, compilation_mode
         )
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(12)]
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit: final_exp.FinalExpTorusCircuit = final_exp.GaragaFinalExp[
@@ -155,7 +156,6 @@ class MultiMillerLoop(BaseEXTFCircuit):
         self.n_pairs = n_pairs
         super().__init__(
             f"multi_miller_loop_{n_pairs}",
-            6 * n_pairs,
             curve_id,
             auto_run,
             compilation_mode,
@@ -205,7 +205,6 @@ class MultiPairingCheck(BaseEXTFCircuit):
         self.n_pairs = n_pairs
         super().__init__(
             f"multi_pairing_check_{n_pairs}",
-            6 * n_pairs,
             curve_id,
             auto_run,
             compilation_mode,
@@ -213,7 +212,6 @@ class MultiPairingCheck(BaseEXTFCircuit):
         self.generic_over_curve = True
 
     def build_input(self) -> list[PyFelt]:
-
         input, _ = multi_pairing_check.get_pairing_check_input(
             CurveID(self.curve_id), self.n_pairs
         )
@@ -242,7 +240,7 @@ class MultiPairingCheck(BaseEXTFCircuit):
         return circuit
 
 class MapToCurveG2Part1Circuit(BaseModuloCircuit):
-    def __init__(self, curve_id: int, compilation_mode: int = 0):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
             name="map_to_curve_g2_first_step",
             curve_id=curve_id,
@@ -270,7 +268,7 @@ class MapToCurveG2Part1Circuit(BaseModuloCircuit):
         return circuit
     
 class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
-    def __init__(self, curve_id: int, compilation_mode: int = 0):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
             name="map_to_curve_g2_fin_quad",
             curve_id=curve_id,
@@ -280,13 +278,13 @@ class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
     def build_input(self) -> list[PyFelt]:
         return [
             self.field(randint(0, 1000000)), # field
-            self.field(0), # 0
-            self.field(randint(0, 1000000)), # g1x
-            self.field(0), # 0
+            self.field(1), # 0
+            self.field(1012), # g1x
+            self.field(17), # 0
             self.field(randint(0, 1000000)), # div
-            self.field(0), # 0
+            self.field(1), # 0
             self.field(randint(0, 1000000)), # num_x1
-            self.field(0), # 0
+            self.field(1), # 0
         ]
     
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
@@ -309,7 +307,7 @@ class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
         return circuit
     
 class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
-    def __init__(self, curve_id: int, compilation_mode: int = 0):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
             name="map_to_curve_g2_fin_non_quad",
             curve_id=curve_id,
@@ -319,15 +317,15 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
     def build_input(self) -> list[PyFelt]:
         return [
             self.field(randint(0, 1000000)), # field
-            self.field(0), # 0
+            self.field(1), # 0
             self.field(-2), # g1x
             self.field(-1), # 0
             self.field(randint(0, 1000000)), # div
-            self.field(0), # 0
+            self.field(1), # 0
             self.field(randint(0, 1000000)), # num_x1
-            self.field(0), # 0
+            self.field(1), # 0
             self.field(randint(0, 1000000)), # zeta_u2
-            self.field(0), # 0
+            self.field(1), # 0
         ]
     
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
@@ -351,7 +349,7 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
         return circuit
     
 class IsogenyG2Circuit(BaseModuloCircuit):
-    def __init__(self, curve_id: int, compilation_mode: int = 0):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
             name="isogeny_g2",
             curve_id=curve_id,
@@ -368,9 +366,52 @@ class IsogenyG2Circuit(BaseModuloCircuit):
             compilation_mode=self.compilation_mode,
         )
 
-        px, py = circuit.write_struct(structs.G2PointCircuit(name="pt", elmts=input))
-        affine_x, affine_y = circuit.run_isogeny_g2(px, py)
+        px0, px1, py0, py1 = circuit.write_struct(structs.G2PointCircuit(name="pt", elmts=input))
+        affine_x, affine_y = circuit.run_isogeny_g2([px0, px1], [py0, py1])
 
         circuit.extend_struct_output(
             structs.G2PointCircuit(name="res", elmts=[affine_x[0], affine_x[1], affine_y[0], affine_y[1]])
         )
+
+        return circuit
+    
+class AddECPointG2Circuit(BaseModuloCircuit):
+    def __init__(
+        self,
+        curve_id: int,
+        auto_run: bool = True,
+        compilation_mode: int = 0,
+    ):
+        super().__init__(
+            name="add_ec_point_g2",
+            curve_id=curve_id,
+            auto_run=auto_run,
+            compilation_mode=compilation_mode,
+        )
+
+    def build_input(self) -> list[PyFelt]:
+        input = []
+        P = G2Point.gen_random_point(CurveID(self.curve_id))
+        Q = G2Point.gen_random_point(CurveID(self.curve_id))
+        input.append(self.field(P.x[0]))
+        input.append(self.field(P.x[1]))
+        input.append(self.field(P.y[0]))
+        input.append(self.field(P.y[1]))
+        input.append(self.field(Q.x[0]))
+        input.append(self.field(Q.x[1]))
+        input.append(self.field(Q.y[0]))
+        input.append(self.field(Q.y[1]))
+        return input
+    
+    def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
+        circuit = BasicECG2(
+            self.name, self.curve_id, compilation_mode=self.compilation_mode
+        )
+
+        px0, px1, py0, py1 = circuit.write_struct(structs.G2PointCircuit("p", input[0:4]), WriteOps.INPUT)
+        qx0, qx1, qy0, qy1 = circuit.write_struct(structs.G2PointCircuit("q", input[4:8]), WriteOps.INPUT)
+
+        xR, yR = circuit.add_points(([px0, px1], [py0, py1]), ([qx0, qx1], [qy0, qy1]))
+        circuit.extend_struct_output(structs.G2PointCircuit("r", [xR[0], xR[1], yR[0], yR[1]]))
+
+        return circuit

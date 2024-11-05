@@ -24,6 +24,7 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     SlopeInterceptSamePointCircuit,
 )
 from precompiled_circuits.compilable_circuits.fustat_only import (
+    AddECPointG2Circuit,
     DerivePointFromXCircuit,
     FinalExpPart1Circuit,
     FinalExpPart2Circuit,
@@ -63,6 +64,7 @@ class CircuitID(Enum):
         b"finalize_function_challenge_dupl", "big"
     )
     ADD_EC_POINT = int.from_bytes(b"add_ec_point", "big")
+    ADD_EC_POINT_G2 = int.from_bytes(b"add_ec_point_g2", "big")
     DOUBLE_EC_POINT = int.from_bytes(b"double_ec_point", "big")
     MP_CHECK_BIT0_LOOP = int.from_bytes(b"mp_check_bit0_loop", "big")
     MP_CHECK_BIT00_LOOP = int.from_bytes(b"mp_check_bit00_loop", "big")
@@ -187,6 +189,11 @@ ALL_FUSTAT_CIRCUITS = {
         "params": None,
         "filename": "ec",
     },
+    CircuitID.ADD_EC_POINT_G2: {
+        "class": AddECPointG2Circuit,
+        "params": None,
+        "filename": "ec",
+    },
     CircuitID.DOUBLE_EC_POINT: {
         "class": DoubleECPointCircuit,
         "params": None,
@@ -196,22 +203,26 @@ ALL_FUSTAT_CIRCUITS = {
         "class": MapToCurveG2Part1Circuit,
         "params": None,
         "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
     },
     CircuitID.MAP_TO_CURVE_G2_FIN_QUAD: {
         "class": MapToCurveG2FinalizeQuadResCircuit,
         "params": None,
         "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
     },
     CircuitID.MAP_TO_CURVE_G2_FIN_NON_QUAD: {
         "class": MapToCurveG2FinalizeNonQuadResCircuit,
         "params": None,
         "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
     },
-    CircuitID.ISOGENY_G2: {
-        "class": IsogenyG2Circuit,
-        "params": None,
-        "filename": "isogeny_g2",
-    },
+    # CircuitID.ISOGENY_G2: {
+    #     "class": IsogenyG2Circuit,
+    #     "params": None,
+    #     "filename": "isogeny_g2",
+    #     "curve_ids": [CurveID.BLS12_381],
+    # },
 }
 
 
