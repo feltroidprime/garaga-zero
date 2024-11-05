@@ -15,8 +15,8 @@ from precompiled_circuits.map_to_curve_g2 import (
     get_MAP_TO_CURVE_G2_FIN_QUAD_circuit,
     get_MAP_TO_CURVE_G2_FIN_NON_QUAD_circuit
 )
+from precompiled_circuits.isogeny_g2 import get_ISOGENY_G2_circuit
 from modulo_circuit import run_modulo_circuit, ModuloCircuit
-
 
 func hash_to_curve{
     range_check_ptr,
@@ -39,8 +39,10 @@ func hash_to_curve{
     print_g2(p2);
 
     let (added_points) = add_ec_points_g2(curve_id, p1, p2);
-
     print_g2(added_points);
+
+    let (isogeny_points) = apply_isogeny_g2(curve_id, added_points);
+    print_g2(isogeny_points);
 
     return ();
 }
@@ -52,7 +54,6 @@ func map_to_curve_g2{
     add_mod_ptr: ModBuiltin*,
     mul_mod_ptr: ModBuiltin*,
     pow2_array: felt*
-    
 }(field: UInt384*, curve_id: felt) -> (point: G2Point) {
     alloc_locals;
 
@@ -125,13 +126,46 @@ func map_to_curve_g2{
 
         return (point=[cast(output, G2Point*)]);
     }
+}
 
-    
+func apply_isogeny_g2{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
+}(curve_id: felt, point: G2Point) -> (point: G2Point) {
+    alloc_locals;
 
-    // return (point=[cast(output, UInt384*)]);
+    let (circuit) = get_ISOGENY_G2_circuit(curve_id);
+    let (input: felt*) = alloc();
+    assert input[0] = point.x0.d0;
+    assert input[1] = point.x0.d1;
+    assert input[2] = point.x0.d2;
+    assert input[3] = point.x0.d3;
+    assert input[4] = point.x1.d0;
+    assert input[5] = point.x1.d1;
+    assert input[6] = point.x1.d2;
+    assert input[7] = point.x1.d3;
+    assert input[8] = point.y0.d0;
+    assert input[9] = point.y0.d1;
+    assert input[10] = point.y0.d2;
+    assert input[11] = point.y0.d3;
+    assert input[12] = point.y1.d0;
+    assert input[13] = point.y1.d1;
+    assert input[14] = point.y1.d2;
+    assert input[15] = point.y1.d3;
 
-    // return ();
+    %{
+        i = 0
+        while i < 16:
+            value = hex(memory[ids.input + i])
+            print(value)
+            i += 1
+    %}
+    let (output) = run_modulo_circuit(circuit, input);
 
+    return (point=[cast(output, G2Point*)]);
 }
 
 func hex_print_field(field: UInt384) {
@@ -305,5 +339,22 @@ func hex_print_g2(point: G2Point) {
 //   },
 //   c1: Fp {
 //     value: 3684633599184560222490700115577520911020962810206788383522966831012065752604210815152740734710545831758791724608234n
+//   }
+// }
+
+// x3 Fp2 {
+//   c0: Fp {
+//     value: 3789617024712504402204306620295003375951143917889162928515122476381982967144814366712031831841518399614182231387665n
+//   },
+//   c1: Fp {
+//     value: 1467567314213963969852279817989131104935039564231603908576814773321528757289376676761397368853965316423532584391899n
+//   }
+// }
+// y3 Fp2 {
+//   c0: Fp {
+//     value: 1292375129422168617658520396283100687686347104559592203462491249161639006037671760603453326853098986903549775136448n
+//   },
+//   c1: Fp {
+//     value: 306655960768766438834866368706782505873384691666290681181893693450298456233972904889955517117016529975705729523733n
 //   }
 // }
