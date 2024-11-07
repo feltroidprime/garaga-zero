@@ -192,7 +192,7 @@ ALL_FUSTAT_CIRCUITS = {
     CircuitID.ADD_EC_POINT_G2: {
         "class": AddECPointG2Circuit,
         "params": None,
-        "filename": "ec",
+        "filename": "ec"
     },
     CircuitID.DOUBLE_EC_POINT: {
         "class": DoubleECPointCircuit,

@@ -375,7 +375,7 @@ class IsogenyG2Circuit(BaseModuloCircuit):
 
         return circuit
     
-class AddECPointG2Circuit(BaseModuloCircuit):
+class AddECPointG2Circuit(BaseEXTFCircuit):
     def __init__(
         self,
         curve_id: int,
@@ -383,11 +383,12 @@ class AddECPointG2Circuit(BaseModuloCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            name="add_ec_point_g2",
-            curve_id=curve_id,
-            auto_run=auto_run,
-            compilation_mode=compilation_mode,
+            f"add_points_g2",
+            curve_id,
+            auto_run,
+            compilation_mode,
         )
+        self.generic_over_curve = True
 
     def build_input(self) -> list[PyFelt]:
         input = []
@@ -403,15 +404,17 @@ class AddECPointG2Circuit(BaseModuloCircuit):
         input.append(self.field(Q.y[1]))
         return input
     
-    def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
+    def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit = BasicECG2(
             self.name, self.curve_id, compilation_mode=self.compilation_mode
         )
 
-        px0, px1, py0, py1 = circuit.write_struct(structs.G2PointCircuit("p", input[0:4]), WriteOps.INPUT)
-        qx0, qx1, qy0, qy1 = circuit.write_struct(structs.G2PointCircuit("q", input[4:8]), WriteOps.INPUT)
+        p = circuit.write_elements(input[0:4], WriteOps.INPUT)
+        q = circuit.write_elements(input[4:8], WriteOps.INPUT)
 
-        xR, yR = circuit.add_points(([px0, px1], [py0, py1]), ([qx0, qx1], [qy0, qy1]))
+        xR, yR = circuit.add_points((p[0:2], p[2:4]), (q[0:2], q[2:4]))
         circuit.extend_struct_output(structs.G2PointCircuit("r", [xR[0], xR[1], yR[0], yR[1]]))
+        circuit.finalize_circuit()
 
         return circuit
+    
