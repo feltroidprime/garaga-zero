@@ -30,7 +30,7 @@ from precompiled_circuits.ec import (
     get_RHS_FINALIZE_ACC_circuit,
     get_EVAL_FUNCTION_CHALLENGE_DUPL_circuit,
     get_ADD_EC_POINT_circuit,
-    get_ADD_EC_POINT_G2_circuit,
+    get_ADD_EC_POINTS_G2_circuit,
     get_DOUBLE_EC_POINT_circuit,
 )
 from starkware.cairo.common.uint256 import Uint256
@@ -195,7 +195,7 @@ func add_ec_points_g2{
 }(curve_id: felt, P: G2Point, Q: G2Point) -> (res: G2Point) {
     alloc_locals;
 
-    let (circuit) = get_ADD_EC_POINT_G2_circuit(curve_id);
+    let (circuit) = get_ADD_EC_POINTS_G2_circuit(curve_id);
     let (input: UInt384*) = alloc();
     assert input[0] = P.x0;
     assert input[1] = P.x1;

@@ -1,27 +1,24 @@
 from random import randint
 
+import garaga.modulo_circuit_structs as structs
 from garaga.definitions import CURVES, STARK, CurveID, G1Point, G2Point
 from garaga.extension_field_modulo_circuit import ExtensionFieldModuloCircuit
-import garaga.modulo_circuit_structs as structs
-
 from garaga.modulo_circuit import WriteOps
 from garaga.precompiled_circuits import (
     final_exp,
     multi_miller_loop,
     multi_pairing_check,
 )
+from garaga.precompiled_circuits.cofactor_clearing import FastG2CofactorClearing
 from garaga.precompiled_circuits.compilable_circuits.base import (
     BaseEXTFCircuit,
     BaseModuloCircuit,
     ModuloCircuit,
-    ModuloCircuitElement,
     PyFelt,
 )
-from garaga.precompiled_circuits.ec import BasicECG2
-from garaga.precompiled_circuits.map_to_curve import MapToCurveG2
+from garaga.precompiled_circuits.ec import BasicECG2, DerivePointFromX
 from garaga.precompiled_circuits.isogeny import IsogenyG2
-from garaga.precompiled_circuits.ec import DerivePointFromX
-from garaga.algebra import Fp2
+from garaga.precompiled_circuits.map_to_curve import MapToCurveG2
 
 
 class DerivePointFromXCircuit(BaseModuloCircuit):
@@ -64,9 +61,7 @@ class FP12MulCircuit(BaseEXTFCircuit):
         init_hash: int = None,
         compilation_mode: int = 0,
     ):
-        super().__init__(
-            "fp12_mul", curve_id, auto_run, init_hash, compilation_mode
-        )
+        super().__init__("fp12_mul", curve_id, auto_run, init_hash, compilation_mode)
 
     def build_input(self) -> list[PyFelt]:
         return [self.field(randint(0, self.field.p - 1)) for _ in range(24)]
@@ -239,6 +234,7 @@ class MultiPairingCheck(BaseEXTFCircuit):
 
         return circuit
 
+
 class MapToCurveG2Part1Circuit(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
@@ -249,9 +245,9 @@ class MapToCurveG2Part1Circuit(BaseModuloCircuit):
 
     def build_input(self) -> list[PyFelt]:
         return [self.field(randint(0, 1000000)), self.field(0)]
-    
+
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
-        circuit = MapToCurveG2(    
+        circuit = MapToCurveG2(
             self.name,
             self.curve_id,
             compilation_mode=self.compilation_mode,
@@ -260,13 +256,14 @@ class MapToCurveG2Part1Circuit(BaseModuloCircuit):
         circuit.set_consts()
         input_value = circuit.write_elements(input, WriteOps.INPUT)
         intermediate_values = circuit.map_to_curve_part_1(input_value)
-        circuit.extend_output(intermediate_values[0]) # g1x
-        circuit.extend_output(intermediate_values[1]) # div
-        circuit.extend_output(intermediate_values[2]) # num_x1
-        circuit.extend_output(intermediate_values[3]) # zeta_u2
-        
+        circuit.extend_output(intermediate_values[0])  # g1x
+        circuit.extend_output(intermediate_values[1])  # div
+        circuit.extend_output(intermediate_values[2])  # num_x1
+        circuit.extend_output(intermediate_values[3])  # zeta_u2
+
         return circuit
-    
+
+
 class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
@@ -277,18 +274,18 @@ class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
 
     def build_input(self) -> list[PyFelt]:
         return [
-            self.field(randint(0, 1000000)), # field
-            self.field(1), # 0
-            self.field(1012), # g1x
-            self.field(17), # 0
-            self.field(randint(0, 1000000)), # div
-            self.field(1), # 0
-            self.field(randint(0, 1000000)), # num_x1
-            self.field(1), # 0
+            self.field(randint(0, 1000000)),  # field
+            self.field(1),  # 0
+            self.field(1012),  # g1x
+            self.field(17),  # 0
+            self.field(randint(0, 1000000)),  # div
+            self.field(1),  # 0
+            self.field(randint(0, 1000000)),  # num_x1
+            self.field(1),  # 0
         ]
-    
+
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
-        circuit = MapToCurveG2(    
+        circuit = MapToCurveG2(
             self.name,
             self.curve_id,
             compilation_mode=self.compilation_mode,
@@ -298,14 +295,17 @@ class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
         field = circuit.write_elements(input[0:2], WriteOps.INPUT)
         g1x = circuit.write_elements(input[2:4], WriteOps.INPUT)
         div = circuit.write_elements(input[4:6], WriteOps.INPUT)
-        num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT) 
-        intermediate_values = circuit.finalize_map_to_curve_quadratic(field, g1x, div, num_x1)
+        num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT)
+        intermediate_values = circuit.finalize_map_to_curve_quadratic(
+            field, g1x, div, num_x1
+        )
 
-        circuit.extend_output(intermediate_values[0]) # x_affine
-        circuit.extend_output(intermediate_values[1]) # y_affine
-        
+        circuit.extend_output(intermediate_values[0])  # x_affine
+        circuit.extend_output(intermediate_values[1])  # y_affine
+
         return circuit
-    
+
+
 class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
@@ -316,20 +316,20 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
 
     def build_input(self) -> list[PyFelt]:
         return [
-            self.field(randint(0, 1000000)), # field
-            self.field(1), # 0
-            self.field(-2), # g1x
-            self.field(-1), # 0
-            self.field(randint(0, 1000000)), # div
-            self.field(1), # 0
-            self.field(randint(0, 1000000)), # num_x1
-            self.field(1), # 0
-            self.field(randint(0, 1000000)), # zeta_u2
-            self.field(1), # 0
+            self.field(randint(0, 1000000)),  # field
+            self.field(1),  # 0
+            self.field(-2),  # g1x
+            self.field(-1),  # 0
+            self.field(randint(0, 1000000)),  # div
+            self.field(1),  # 0
+            self.field(randint(0, 1000000)),  # num_x1
+            self.field(1),  # 0
+            self.field(randint(0, 1000000)),  # zeta_u2
+            self.field(1),  # 0
         ]
-    
+
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
-        circuit = MapToCurveG2(    
+        circuit = MapToCurveG2(
             self.name,
             self.curve_id,
             compilation_mode=self.compilation_mode,
@@ -339,15 +339,18 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
         field = circuit.write_elements(input[0:2], WriteOps.INPUT)
         g1x = circuit.write_elements(input[2:4], WriteOps.INPUT)
         div = circuit.write_elements(input[4:6], WriteOps.INPUT)
-        num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT) 
+        num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT)
         zeta_u2 = circuit.write_elements(input[8:10], WriteOps.INPUT)
-        intermediate_values = circuit.finalize_map_to_curve_non_quadratic(field, g1x, div, num_x1, zeta_u2)
+        intermediate_values = circuit.finalize_map_to_curve_non_quadratic(
+            field, g1x, div, num_x1, zeta_u2
+        )
 
-        circuit.extend_output(intermediate_values[0]) # x_affine
-        circuit.extend_output(intermediate_values[1]) # y_affine
-        
+        circuit.extend_output(intermediate_values[0])  # x_affine
+        circuit.extend_output(intermediate_values[1])  # y_affine
+
         return circuit
-    
+
+
 class IsogenyG2Circuit(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
@@ -357,25 +360,35 @@ class IsogenyG2Circuit(BaseModuloCircuit):
         )
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, 1000000)), self.field(0), self.field(randint(0, 1000000)), self.field(0)]
-    
+        return [
+            self.field(randint(0, 1000000)),
+            self.field(0),
+            self.field(randint(0, 1000000)),
+            self.field(0),
+        ]
+
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
-        circuit = IsogenyG2(    
+        circuit = IsogenyG2(
             self.name,
             self.curve_id,
             compilation_mode=self.compilation_mode,
         )
 
-        px0, px1, py0, py1 = circuit.write_struct(structs.G2PointCircuit(name="pt", elmts=input))
+        px0, px1, py0, py1 = circuit.write_struct(
+            structs.G2PointCircuit(name="pt", elmts=input)
+        )
         affine_x, affine_y = circuit.run_isogeny_g2([px0, px1], [py0, py1])
 
         circuit.extend_struct_output(
-            structs.G2PointCircuit(name="res", elmts=[affine_x[0], affine_x[1], affine_y[0], affine_y[1]])
+            structs.G2PointCircuit(
+                name="res", elmts=[affine_x[0], affine_x[1], affine_y[0], affine_y[1]]
+            )
         )
 
         return circuit
-    
-class AddECPointG2Circuit(BaseEXTFCircuit):
+
+
+class AddECPointsG2Circuit(BaseModuloCircuit):
     def __init__(
         self,
         curve_id: int,
@@ -383,12 +396,11 @@ class AddECPointG2Circuit(BaseEXTFCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            f"add_points_g2",
+            f"add_ec_points_g2",
             curve_id,
             auto_run,
             compilation_mode,
         )
-        self.generic_over_curve = True
 
     def build_input(self) -> list[PyFelt]:
         input = []
@@ -403,18 +415,71 @@ class AddECPointG2Circuit(BaseEXTFCircuit):
         input.append(self.field(Q.y[0]))
         input.append(self.field(Q.y[1]))
         return input
-    
-    def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
+
+    def _run_circuit_inner(self, input: list[PyFelt]):
         circuit = BasicECG2(
             self.name, self.curve_id, compilation_mode=self.compilation_mode
         )
 
-        p = circuit.write_elements(input[0:4], WriteOps.INPUT)
-        q = circuit.write_elements(input[4:8], WriteOps.INPUT)
+        px0, px1, py0, py1 = circuit.write_struct(
+            structs.G2PointCircuit("p", input[0:4]), WriteOps.INPUT
+        )
+        qx0, qx1, qy0, qy1 = circuit.write_struct(
+            structs.G2PointCircuit("q", input[4:8]), WriteOps.INPUT
+        )
 
-        xR, yR = circuit.add_points((p[0:2], p[2:4]), (q[0:2], q[2:4]))
-        circuit.extend_struct_output(structs.G2PointCircuit("r", [xR[0], xR[1], yR[0], yR[1]]))
-        circuit.finalize_circuit()
+        xR, yR = circuit.add_points(([px0, px1], [py0, py1]), ([qx0, qx1], [qy0, qy1]))
+        circuit.extend_struct_output(
+            structs.G2PointCircuit("r", [xR[0], xR[1], yR[0], yR[1]])
+        )
 
         return circuit
-    
+
+
+class FastG2CofactorClearingCircuit(BaseModuloCircuit):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
+        super().__init__(
+            "g2_cofactor_clearing",
+            curve_id,
+            auto_run,
+            compilation_mode,
+        )
+
+    def build_input(self) -> list[PyFelt]:
+        input = []
+        input.append(
+            self.field(
+                3789617024712504402204306620295003375951143917889162928515122476381982967144814366712031831841518399614182231387665
+            )
+        )
+        input.append(
+            self.field(
+                1467567314213963969852279817989131104935039564231603908576814773321528757289376676761397368853965316423532584391899
+            )
+        )
+        input.append(
+            self.field(
+                1292375129422168617658520396283100687686347104559592203462491249161639006037671760603453326853098986903549775136448
+            )
+        )
+        input.append(
+            self.field(
+                306655960768766438834866368706782505873384691666290681181893693450298456233972904889955517117016529975705729523733
+            )
+        )
+        return input
+
+    def _run_circuit_inner(self, input: list[PyFelt]):
+        circuit = FastG2CofactorClearing(
+            self.name, self.curve_id, compilation_mode=self.compilation_mode
+        )
+
+        px0, px1, py0, py1 = circuit.write_struct(
+            structs.G2PointCircuit("p", input[0:4]), WriteOps.INPUT
+        )
+        xR, yR = circuit.clear_cofactor(([px0, px1], [py0, py1]))
+        circuit.extend_struct_output(
+            structs.G2PointCircuit("r", [xR[0], xR[1], yR[0], yR[1]])
+        )
+
+        return circuit
