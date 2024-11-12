@@ -57,7 +57,7 @@ namespace HashToField32 {
         assert [one_dst + 7] = 0x3235365F;
         assert [one_dst + 8] = 0x53535755;
         assert [one_dst + 9] = 0x5F524F5F;
-        assert [one_dst + 10] = 0x4E554C5F;
+        assert [one_dst + 10] = 0x504F505F;
         assert [one_dst + 11] = 0x2B;
 
         return one_dst;
@@ -110,8 +110,8 @@ namespace HashToField32 {
         assert [msg_hash_train + 31] = 0x412D3235;
         assert [msg_hash_train + 32] = 0x365F5353;
         assert [msg_hash_train + 33] = 0x57555F52;
-        assert [msg_hash_train + 34] = 0x4F5F4E55;
-        assert [msg_hash_train + 35] = 0x4C5F2B;  // DST + DST.len
+        assert [msg_hash_train + 34] = 0x4F5F504F;
+        assert [msg_hash_train + 35] = 0x505F2B;  // DST + DST.len
 
         // Compute the initial hash (b_0)
         let (msg_hash) = SHA256.hash_bytes(msg_hash_train, 111 + msg_bytes_len);  // 64b z_pad + msg_bytes_len + 2b block_size, 0x0 ++ 43b dst + 1b dst_len
@@ -228,6 +228,7 @@ namespace HashToField32 {
                 expanded_msg=expanded_msg, count_index=index, degree_index=0, offset=offset
             );
         }
+
         assert result_fields[index] = fields;
 
         return hash_to_field_inner(expanded_msg=expanded_msg, count=count, index=index + 1);
@@ -248,11 +249,6 @@ namespace HashToField32 {
         }
 
         let (result) = _u512_mod_p(expanded_msg + offset);
-        // %{
-        //     from garaga.hints.io import bigint_pack
-        //     result = bigint_pack(ids.result, 4, 2**96)
-        //     print(hex(result))
-        // %}
         assert fields[degree_index] = result;
 
         return hash_to_field_inner_inner(

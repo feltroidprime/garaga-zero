@@ -53,10 +53,10 @@ func test_32_bytes_msg{
     %{
         from garaga.hints.io import bigint_pack
 
-        assert bigint_pack(ids.f0, 4, 2**96) == 0xa1d5f7f60126ba84c5a337f4e9ae2d02ef018a7fd34c6eff78b3bcc327d8ca8f28ed9a9344b3cef5b6946d0078d34f3
-        assert bigint_pack(ids.f1, 4, 2**96) == 0xe7f6f005fa2404be24f13fc6bf9facabc9f7b01d4a0fa1df8695251163c27437afccf0d3eb4e611fe8dd14bcd1bb881
-        assert bigint_pack(ids.f2, 4, 2**96) == 0x184fd90d987275be14e967e4a4ee0e963544e6694c88d36358a05f0fb45ae538a0e3b687126e0962a40a3cdfa899d0aa
-        assert bigint_pack(ids.f3, 4, 2**96) == 0xd7d91409c8b0ed8914cc0c877eb255e05135240e28835ade65557b69b6b34b18fe99801702311eb0e1328e4de7ea38b
+        assert bigint_pack(ids.f0, 4, 2**96) == 0xc5103029faaf3369e638d7aaaba45eb8ae899038d6417ab9e39ce42db5eae1c6a483f2280a1c232d2eddf0d646bda31
+        assert bigint_pack(ids.f1, 4, 2**96) == 0x863addcc3d140f28b567768e1a7914966055715f389a15ce9a1f0e7dd9a2232c05d9da1ee62bb814b1b020402aa24ba
+        assert bigint_pack(ids.f2, 4, 2**96) == 0x10eba413385deaf700acc7abd69fa0cae6c40dbafbbf6efa49cf85e38f650392f3f43a8b38ace82c23178f2f14613549
+        assert bigint_pack(ids.f3, 4, 2**96) == 0x17cd6387987d0ad3118d8901c0b9e4472a48f80d05c1fdcabe97468abec494770f8792e2c74c1663f99ea600fb4ee620
     %}
     return ();
 }
