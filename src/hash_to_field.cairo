@@ -228,7 +228,6 @@ namespace HashToField32 {
                 expanded_msg=expanded_msg, count_index=index, degree_index=0, offset=offset
             );
         }
-
         assert result_fields[index] = fields;
 
         return hash_to_field_inner(expanded_msg=expanded_msg, count=count, index=index + 1);
@@ -249,6 +248,11 @@ namespace HashToField32 {
         }
 
         let (result) = _u512_mod_p(expanded_msg + offset);
+        // %{
+        //     from garaga.hints.io import bigint_pack
+        //     result = bigint_pack(ids.result, 4, 2**96)
+        //     print(hex(result))
+        // %}
         assert fields[degree_index] = result;
 
         return hash_to_field_inner_inner(
