@@ -21,14 +21,14 @@ func main{
     let (pow2_array) = pow2alloc128();
 
     with sha256_ptr, pow2_array {
-        test_32_bytes_msg_1();
+        run_fixture_g2();
     }
 
     SHA256.finalize(sha256_ptr_start, sha256_ptr);
     return ();
 }
 
-func test_32_bytes_msg_1{
+func run_fixture_g2{
     range_check_ptr,
     bitwise_ptr: BitwiseBuiltin*,
     range_check96_ptr: felt*,
@@ -39,12 +39,41 @@ func test_32_bytes_msg_1{
 }() {
     alloc_locals;
 
-    // This is the signing root of sepl block 5800064
-    let value = Uint256(
-        low=0x135aa063454c6023e1fbafd896f89df9, high=0x18b90e7987b9393d878786da78fa13fd
-    );
-    let (chunks) = HashUtils.chunk_uint256(value);
-    let (res) = hash_to_curve(1, value);
+    local n_fixtures: felt;
+    %{
+        fixtures = program_input
+        ids.n_fixtures = len(fixtures)
+    %}
+
+    run_fixture_g2_inner(0, n_fixtures);
+
+    return ();
+}
+
+func run_fixture_g2_inner{
+    range_check_ptr,
+    bitwise_ptr: BitwiseBuiltin*,
+    range_check96_ptr: felt*,
+    add_mod_ptr: ModBuiltin*,
+    mul_mod_ptr: ModBuiltin*,
+    sha256_ptr: felt*,
+    pow2_array: felt*,
+}(index: felt, n_fixtures: felt) {
+    alloc_locals;
+
+    if (index == n_fixtures) {
+        return ();
+    }
+
+    local input: Uint256;
+    %{
+        print("Running Fixture: ", ids.index)
+        high, low = divmod(int(fixtures[ids.index]["input"], 16), 2**128)
+        ids.input.low = low
+        ids.input.high = high
+    %}
+
+    let (res) = hash_to_curve(1, input);
     let x0 = res.x0;
     let x1 = res.x1;
     let y0 = res.y0;
@@ -53,10 +82,11 @@ func test_32_bytes_msg_1{
     %{
         from garaga.hints.io import bigint_pack
 
-        assert bigint_pack(ids.x0, 4, 2**96) == 0x06fd28e02e2bd8c5d1d3a8d98a44454ca701eea859db2b05c74d1642fe6acb8c6b0c6c95636df4489997a8f0c75747b3
-        assert bigint_pack(ids.x1, 4, 2**96) == 0x1361e963a16aa10cc23d8061977b83722d31adc850b61a992915cb135a0760c623a8fb5281cbb607f7184c5c9b9c2ab2
-        assert bigint_pack(ids.y0, 4, 2**96) == 0x094e4da1e925991a4dd2c87269a633751adb1acfc7bb836b5a734483f24847c291e1ca11914b0ab6a34285c268f1db06
-        assert bigint_pack(ids.y1, 4, 2**96) == 0x0362a0bdcbf2c423f7353331f9b2f6dc03dd7cff5b4c28e6bd172a2d631b8661ec6a1640aa16de1e351c3c44a635da99
+        assert bigint_pack(ids.x0, 4, 2**96) == int(fixtures[ids.index]["point"]["x0"], 16)
+        assert bigint_pack(ids.x1, 4, 2**96) == int(fixtures[ids.index]["point"]["x1"], 16)
+        assert bigint_pack(ids.y0, 4, 2**96) == int(fixtures[ids.index]["point"]["y0"], 16)
+        assert bigint_pack(ids.y1, 4, 2**96) == int(fixtures[ids.index]["point"]["y1"], 16)
     %}
-    return ();
+
+    return run_fixture_g2_inner(index + 1, n_fixtures);
 }

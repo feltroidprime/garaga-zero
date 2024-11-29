@@ -35,22 +35,22 @@ func hash_to_curve{
 
     // The use simple swu to map the field elements to the curve
     let (p1) = map_to_curve_g2(res[0], curve_id);
-    %{ print("x0") %}
-    print_g2(p1);
+    // %{ print("x0") %}
+    // print_g2(p1);
     let (p2) = map_to_curve_g2(res[1], curve_id);
-    %{ print("x1") %}
-    print_g2(p2);
+    // %{ print("x1") %}
+    // print_g2(p2);
 
     let (added_points) = add_ec_points_g2(curve_id, p1, p2);
-    %{ print("x2") %}
-    print_g2(added_points);
+    // %{ print("x2") %}
+    // print_g2(added_points);
 
     let (isogeny_points) = apply_isogeny_g2(curve_id, added_points);
-    %{ print("x3") %}
-    print_g2(isogeny_points);
+    // %{ print("x3") %}
+    // print_g2(isogeny_points);
 
     let (cleared_points) = clear_cofactor_g2(curve_id, isogeny_points);
-    print_g2(cleared_points);
+    // print_g2(cleared_points);
 
     return (curve_point=cleared_points);
 }
