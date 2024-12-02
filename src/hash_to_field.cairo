@@ -9,8 +9,7 @@ from definitions import get_P
 from utils import felt_divmod
 from sha import SHA256, HashUtils
 
-// HashToField functionality, using SHA256 and 32-byte messages
-// DST is "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_"
+//DST: BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_
 namespace HashToField {
     const B_IN_BYTES = 32;  // hash function output size
     const B_IN_FELTS = 8;  // 32 bytes, require 8 chunks
@@ -252,11 +251,6 @@ namespace HashToField {
         }
 
         let (result) = _u512_mod_p(expanded_msg + offset);
-        // %{
-        //     from garaga.hints.io import bigint_pack
-        //     result = bigint_pack(ids.result, 4, 2**96)
-        //     print(hex(result))
-        // %}
         assert fields[degree_index] = result;
 
         return hash_to_field_inner_inner(
