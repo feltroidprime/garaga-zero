@@ -1,4 +1,4 @@
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, UInt384
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.memcpy import memcpy
@@ -30,6 +30,7 @@ namespace SHA256 {
         output: felt*
     ) {
         alloc_locals;
+
         let (output) = sha256(data=input, n_bytes=64);
         return (output=output);
     }
@@ -127,6 +128,44 @@ namespace HashUtils {
         let high = [output] * pow2_array[96] + [output + 1] * pow2_array[64] + [output + 2] *
             pow2_array[32] + [output + 3];
         return (Uint256(low=low, high=high));
+    }
+
+    func chunk_uint384{range_check_ptr, pow2_array: felt*}(number: UInt384) -> (output: felt*) {
+        let (output: felt*) = alloc();
+
+        // Process d3 (most significant, 96 bits -> three 32-bit chunks)
+        let (q0, r0) = felt_divmod(number.d3, pow2_array[32]);
+        let (q1, r1) = felt_divmod(q0, pow2_array[32]);
+        let (q2, r2) = felt_divmod(q1, pow2_array[32]);
+        assert [output] = r2;
+        assert [output + 1] = r1;
+        assert [output + 2] = r0;
+
+        // Process d2 (96 bits -> three 32-bit chunks)
+        let (q3, r3) = felt_divmod(number.d2, pow2_array[32]);
+        let (q4, r4) = felt_divmod(q3, pow2_array[32]);
+        let (q5, r5) = felt_divmod(q4, pow2_array[32]);
+        assert [output + 3] = r5;
+        assert [output + 4] = r4;
+        assert [output + 5] = r3;
+
+        // Process d1 (96 bits -> three 32-bit chunks)
+        let (q6, r6) = felt_divmod(number.d1, pow2_array[32]);
+        let (q7, r7) = felt_divmod(q6, pow2_array[32]);
+        let (q8, r8) = felt_divmod(q7, pow2_array[32]);
+        assert [output + 6] = r8;
+        assert [output + 7] = r7;
+        assert [output + 8] = r6;
+
+        // Process d0 (least significant, 96 bits -> three 32-bit chunks)
+        let (q9, r9) = felt_divmod(number.d0, pow2_array[32]);
+        let (q10, r10) = felt_divmod(q9, pow2_array[32]);
+        let (q11, r11) = felt_divmod(q10, pow2_array[32]);
+        assert [output + 9] = r11;
+        assert [output + 10] = r10;
+        assert [output + 11] = r9;
+
+        return (output=output);
     }
 }
 

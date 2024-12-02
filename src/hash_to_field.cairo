@@ -181,7 +181,7 @@ namespace HashToField {
     //
     // Parameters:
     // - msg: a byte string containing the message to hash, chunked in big-endian 4-bytes
-    // - msg_bytes_len: length of the message in bytes
+    // - msg_bytes_len: length of the message in bytes, must be a multiple of 4
     // - count: the number of field elements to output
     // - ext_degree: the degree of the extension field
     //
