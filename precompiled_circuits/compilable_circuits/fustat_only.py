@@ -16,7 +16,11 @@ from garaga.precompiled_circuits.compilable_circuits.base import (
     ModuloCircuit,
     PyFelt,
 )
-from garaga.precompiled_circuits.ec import BasicECG2, DerivePointFromX
+from garaga.precompiled_circuits.ec import (
+    BasicECG2,
+    DeriveG1PointFromX,
+    DerivePointFromX,
+)
 from garaga.precompiled_circuits.isogeny import IsogenyG2
 from garaga.precompiled_circuits.map_to_curve import MapToCurveG2
 
@@ -49,6 +53,35 @@ class DerivePointFromXCircuit(BaseModuloCircuit):
             x, a, b, g
         )
         circuit.extend_output([rhs, grhs, should_be_rhs, should_be_grhs, y_try])
+
+        return circuit
+
+
+class DeriveG1PointFromXCircuit(BaseModuloCircuit):
+    def __init__(
+        self, curve_id: int, auto_run: bool = True, compilation_mode: int = 0
+    ) -> None:
+        super().__init__(
+            name="derive_g1_point_from_x",
+            curve_id=curve_id,
+            auto_run=auto_run,
+            compilation_mode=compilation_mode,
+        )
+
+    def build_input(self) -> list[PyFelt]:
+        input = []
+        input.append(self.field(CURVES[self.curve_id].b))  # y^2 = x^3 + b
+        input.append(self.field(G1Point.gen_random_point(CurveID(self.curve_id)).x))
+        input.append(self.field(0))
+        return input
+
+    def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
+        circuit = DeriveG1PointFromX(
+            self.name, self.curve_id, compilation_mode=self.compilation_mode
+        )
+        b, x, s = circuit.write_elements(input[0:3], WriteOps.INPUT)
+        point = circuit.derive_y_from_x(b, x, s)
+        circuit.extend_output([point])
 
         return circuit
 
@@ -377,7 +410,7 @@ class IsogenyG2Circuit(BaseModuloCircuit):
         px0, px1, py0, py1 = circuit.write_struct(
             structs.G2PointCircuit(name="pt", elmts=input)
         )
-        affine_x, affine_y = circuit.run_isogeny_g2([px0, px1], [py0, py1])
+        affine_x, affine_y = circuit.run_isogeny([px0, px1], [py0, py1])
 
         circuit.extend_struct_output(
             structs.G2PointCircuit(

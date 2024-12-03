@@ -25,6 +25,7 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
 )
 from precompiled_circuits.compilable_circuits.fustat_only import (
     AddECPointsG2Circuit,
+    DeriveG1PointFromXCircuit,
     DerivePointFromXCircuit,
     FastG2CofactorClearingCircuit,
     FinalExpPart1Circuit,
@@ -51,6 +52,7 @@ class CircuitID(Enum):
     IS_ON_CURVE_G1 = int.from_bytes(b"is_on_curve_g1", "big")
     IS_ON_CURVE_G2 = int.from_bytes(b"is_on_curve_g2", "big")
     DERIVE_POINT_FROM_X = int.from_bytes(b"derive_point_from_x", "big")
+    DERIVE_G1_POINT_FROM_X = int.from_bytes(b"derive_g1_point_from_x", "big")
     SLOPE_INTERCEPT_SAME_POINT = int.from_bytes(b"slope_intercept_same_point", "big")
     ACC_EVAL_POINT_CHALLENGE_SIGNED = int.from_bytes(b"acc_eval_point_challenge", "big")
     RHS_FINALIZE_ACC = int.from_bytes(b"rhs_finalize_acc", "big")
@@ -126,6 +128,11 @@ ALL_FUSTAT_CIRCUITS = {
     },
     CircuitID.DERIVE_POINT_FROM_X: {
         "class": DerivePointFromXCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.DERIVE_G1_POINT_FROM_X: {
+        "class": DeriveG1PointFromXCircuit,
         "params": None,
         "filename": "ec",
     },
