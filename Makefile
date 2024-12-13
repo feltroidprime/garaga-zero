@@ -43,3 +43,7 @@ clean:
 
 hints:
 	./tools/make/gen_hints_document.py
+
+
+rewrite:
+	source venv/bin/activate && python precompiled_circuits/all_circuits.py
