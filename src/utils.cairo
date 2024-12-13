@@ -384,16 +384,13 @@ func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt, neg_3_pow: felt*) -> 
     sum_p: felt, sum_n: felt, p_sign: felt, n_sign: felt
 ) {
     alloc_locals;
-    local one = 1;
     let (local digits: felt*) = alloc();
     %{
         from garaga.hints.neg_3 import neg_3_base_le, positive_negative_multiplicities
-
+        assert 0 <= ids.scalar < 2**128
         digits = neg_3_base_le(ids.scalar)
         digits = digits + [0] * (82-len(digits))
         segments.write_arg(ids.digits, digits)
-        pos, neg = positive_negative_multiplicities(digits)
-        assert pos - neg == ids.scalar
     %}
     let sum_p = 0;
     let sum_n = 0;
@@ -449,6 +446,864 @@ func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt, neg_3_pow: felt*) -> 
     let sum_n = [ap - 3];
     let sum_p = [ap - 4];
     assert i = 82;
+
+    // %{
+    //     from starkware.cairo.common.math_utils import as_int
+    //     print(f"{as_int(ids.sum_p, PRIME)=}")
+    //     print(f"{as_int(ids.sum_n, PRIME)=}")
+    // %}
+    assert scalar = sum_p - sum_n;
+
+    let p_sign = sign(sum_p);
+    let n_sign = sign(sum_n);
+
+    return (p_sign * sum_p, n_sign * sum_n, p_sign, n_sign);
+}
+
+struct Neg3Digits {
+    d0: felt,
+    d1: felt,
+    d2: felt,
+    d3: felt,
+    d4: felt,
+    d5: felt,
+    d6: felt,
+    d7: felt,
+    d8: felt,
+    d9: felt,
+    d10: felt,
+    d11: felt,
+    d12: felt,
+    d13: felt,
+    d14: felt,
+    d15: felt,
+    d16: felt,
+    d17: felt,
+    d18: felt,
+    d19: felt,
+    d20: felt,
+    d21: felt,
+    d22: felt,
+    d23: felt,
+    d24: felt,
+    d25: felt,
+    d26: felt,
+    d27: felt,
+    d28: felt,
+    d29: felt,
+    d30: felt,
+    d31: felt,
+    d32: felt,
+    d33: felt,
+    d34: felt,
+    d35: felt,
+    d36: felt,
+    d37: felt,
+    d38: felt,
+    d39: felt,
+    d40: felt,
+    d41: felt,
+    d42: felt,
+    d43: felt,
+    d44: felt,
+    d45: felt,
+    d46: felt,
+    d47: felt,
+    d48: felt,
+    d49: felt,
+    d50: felt,
+    d51: felt,
+    d52: felt,
+    d53: felt,
+    d54: felt,
+    d55: felt,
+    d56: felt,
+    d57: felt,
+    d58: felt,
+    d59: felt,
+    d60: felt,
+    d61: felt,
+    d62: felt,
+    d63: felt,
+    d64: felt,
+    d65: felt,
+    d66: felt,
+    d67: felt,
+    d68: felt,
+    d69: felt,
+    d70: felt,
+    d71: felt,
+    d72: felt,
+    d73: felt,
+    d74: felt,
+    d75: felt,
+    d76: felt,
+    d77: felt,
+    d78: felt,
+    d79: felt,
+    d80: felt,
+    d81: felt,
+}
+
+func scalar_to_epns{range_check_ptr}(scalar: felt) -> (
+    sum_p: felt, sum_n: felt, p_sign: felt, n_sign: felt
+) {
+    alloc_locals;
+    local digits: Neg3Digits;
+
+    %{
+        from garaga.hints.neg_3 import neg_3_base_le, positive_negative_multiplicities
+
+        digits = neg_3_base_le(ids.scalar)
+        digits = digits + [0] * (82-len(digits))
+        for i in range(82):
+            setattr(ids.digits, f"d{i}", digits[i])
+    %}
+
+    if (digits.d0 != 0) {
+        if (digits.d0 == 1) {
+            tempvar sum_p = 1;
+            tempvar sum_n = 0;
+        } else {
+            tempvar sum_p = 0;
+            tempvar sum_n = 1;
+        }
+    } else {
+        tempvar sum_p = 0;
+        tempvar sum_n = 0;
+    }
+
+    if (digits.d1 != 0) {
+        if (digits.d1 == 1) {
+            tempvar sum_p = sum_p + (-3);
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3);
+        }
+    }
+
+    if (digits.d2 != 0) {
+        if (digits.d2 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 2;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 2;
+        }
+    }
+
+    if (digits.d3 != 0) {
+        if (digits.d3 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 3;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 3;
+        }
+    }
+    if (digits.d4 != 0) {
+        if (digits.d4 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 4;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 4;
+        }
+    }
+    if (digits.d5 != 0) {
+        if (digits.d5 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 5;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 5;
+        }
+    }
+    if (digits.d6 != 0) {
+        if (digits.d6 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 6;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 6;
+        }
+    }
+    if (digits.d7 != 0) {
+        if (digits.d7 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 7;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 7;
+        }
+    }
+    if (digits.d8 != 0) {
+        if (digits.d8 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 8;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 8;
+        }
+    }
+    if (digits.d9 != 0) {
+        if (digits.d9 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 9;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 9;
+        }
+    }
+    if (digits.d10 != 0) {
+        if (digits.d10 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 10;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 10;
+        }
+    }
+    if (digits.d11 != 0) {
+        if (digits.d11 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 11;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 11;
+        }
+    }
+    if (digits.d12 != 0) {
+        if (digits.d12 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 12;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 12;
+        }
+    }
+    if (digits.d13 != 0) {
+        if (digits.d13 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 13;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 13;
+        }
+    }
+    if (digits.d14 != 0) {
+        if (digits.d14 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 14;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 14;
+        }
+    }
+    if (digits.d15 != 0) {
+        if (digits.d15 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 15;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 15;
+        }
+    }
+    if (digits.d16 != 0) {
+        if (digits.d16 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 16;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 16;
+        }
+    }
+    if (digits.d17 != 0) {
+        if (digits.d17 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 17;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 17;
+        }
+    }
+    if (digits.d18 != 0) {
+        if (digits.d18 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 18;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 18;
+        }
+    }
+    if (digits.d19 != 0) {
+        if (digits.d19 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 19;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 19;
+        }
+    }
+    if (digits.d20 != 0) {
+        if (digits.d20 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 20;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 20;
+        }
+    }
+    if (digits.d21 != 0) {
+        if (digits.d21 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 21;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 21;
+        }
+    }
+    if (digits.d22 != 0) {
+        if (digits.d22 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 22;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 22;
+        }
+    }
+    if (digits.d23 != 0) {
+        if (digits.d23 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 23;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 23;
+        }
+    }
+    if (digits.d24 != 0) {
+        if (digits.d24 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 24;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 24;
+        }
+    }
+    if (digits.d25 != 0) {
+        if (digits.d25 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 25;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 25;
+        }
+    }
+    if (digits.d26 != 0) {
+        if (digits.d26 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 26;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 26;
+        }
+    }
+    if (digits.d27 != 0) {
+        if (digits.d27 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 27;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 27;
+        }
+    }
+    if (digits.d28 != 0) {
+        if (digits.d28 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 28;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 28;
+        }
+    }
+    if (digits.d29 != 0) {
+        if (digits.d29 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 29;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 29;
+        }
+    }
+    if (digits.d30 != 0) {
+        if (digits.d30 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 30;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 30;
+        }
+    }
+    if (digits.d31 != 0) {
+        if (digits.d31 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 31;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 31;
+        }
+    }
+    if (digits.d32 != 0) {
+        if (digits.d32 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 32;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 32;
+        }
+    }
+    if (digits.d33 != 0) {
+        if (digits.d33 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 33;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 33;
+        }
+    }
+    if (digits.d34 != 0) {
+        if (digits.d34 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 34;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 34;
+        }
+    }
+    if (digits.d35 != 0) {
+        if (digits.d35 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 35;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 35;
+        }
+    }
+    if (digits.d36 != 0) {
+        if (digits.d36 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 36;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 36;
+        }
+    }
+    if (digits.d37 != 0) {
+        if (digits.d37 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 37;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 37;
+        }
+    }
+    if (digits.d38 != 0) {
+        if (digits.d38 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 38;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 38;
+        }
+    }
+    if (digits.d39 != 0) {
+        if (digits.d39 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 39;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 39;
+        }
+    }
+    if (digits.d40 != 0) {
+        if (digits.d40 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 40;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 40;
+        }
+    }
+    if (digits.d41 != 0) {
+        if (digits.d41 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 41;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 41;
+        }
+    }
+    if (digits.d42 != 0) {
+        if (digits.d42 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 42;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 42;
+        }
+    }
+    if (digits.d43 != 0) {
+        if (digits.d43 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 43;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 43;
+        }
+    }
+    if (digits.d44 != 0) {
+        if (digits.d44 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 44;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 44;
+        }
+    }
+    if (digits.d45 != 0) {
+        if (digits.d45 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 45;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 45;
+        }
+    }
+    if (digits.d46 != 0) {
+        if (digits.d46 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 46;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 46;
+        }
+    }
+    if (digits.d47 != 0) {
+        if (digits.d47 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 47;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 47;
+        }
+    }
+    if (digits.d48 != 0) {
+        if (digits.d48 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 48;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 48;
+        }
+    }
+    if (digits.d49 != 0) {
+        if (digits.d49 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 49;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 49;
+        }
+    }
+    if (digits.d50 != 0) {
+        if (digits.d50 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 50;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 50;
+        }
+    }
+    if (digits.d51 != 0) {
+        if (digits.d51 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 51;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 51;
+        }
+    }
+    if (digits.d52 != 0) {
+        if (digits.d52 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 52;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 52;
+        }
+    }
+    if (digits.d53 != 0) {
+        if (digits.d53 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 53;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 53;
+        }
+    }
+    if (digits.d54 != 0) {
+        if (digits.d54 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 54;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 54;
+        }
+    }
+    if (digits.d55 != 0) {
+        if (digits.d55 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 55;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 55;
+        }
+    }
+    if (digits.d56 != 0) {
+        if (digits.d56 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 56;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 56;
+        }
+    }
+    if (digits.d57 != 0) {
+        if (digits.d57 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 57;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 57;
+        }
+    }
+    if (digits.d58 != 0) {
+        if (digits.d58 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 58;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 58;
+        }
+    }
+    if (digits.d59 != 0) {
+        if (digits.d59 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 59;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 59;
+        }
+    }
+    if (digits.d60 != 0) {
+        if (digits.d60 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 60;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 60;
+        }
+    }
+    if (digits.d61 != 0) {
+        if (digits.d61 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 61;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 61;
+        }
+    }
+    if (digits.d62 != 0) {
+        if (digits.d62 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 62;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 62;
+        }
+    }
+    if (digits.d63 != 0) {
+        if (digits.d63 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 63;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 63;
+        }
+    }
+    if (digits.d64 != 0) {
+        if (digits.d64 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 64;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 64;
+        }
+    }
+    if (digits.d65 != 0) {
+        if (digits.d65 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 65;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 65;
+        }
+    }
+    if (digits.d66 != 0) {
+        if (digits.d66 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 66;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 66;
+        }
+    }
+    if (digits.d67 != 0) {
+        if (digits.d67 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 67;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 67;
+        }
+    }
+    if (digits.d68 != 0) {
+        if (digits.d68 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 68;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 68;
+        }
+    }
+    if (digits.d69 != 0) {
+        if (digits.d69 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 69;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 69;
+        }
+    }
+    if (digits.d70 != 0) {
+        if (digits.d70 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 70;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 70;
+        }
+    }
+    if (digits.d71 != 0) {
+        if (digits.d71 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 71;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 71;
+        }
+    }
+    if (digits.d72 != 0) {
+        if (digits.d72 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 72;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 72;
+        }
+    }
+    if (digits.d73 != 0) {
+        if (digits.d73 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 73;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 73;
+        }
+    }
+    if (digits.d74 != 0) {
+        if (digits.d74 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 74;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 74;
+        }
+    }
+    if (digits.d75 != 0) {
+        if (digits.d75 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 75;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 75;
+        }
+    }
+    if (digits.d76 != 0) {
+        if (digits.d76 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 76;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 76;
+        }
+    }
+    if (digits.d77 != 0) {
+        if (digits.d77 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 77;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 77;
+        }
+    }
+    if (digits.d78 != 0) {
+        if (digits.d78 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 78;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 78;
+        }
+    }
+    if (digits.d79 != 0) {
+        if (digits.d79 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 79;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 79;
+        }
+    }
+    if (digits.d80 != 0) {
+        if (digits.d80 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 80;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 80;
+        }
+    }
+    if (digits.d81 != 0) {
+        if (digits.d81 == 1) {
+            tempvar sum_p = sum_p + (-3) ** 81;
+            tempvar sum_n = sum_n;
+        } else {
+            tempvar sum_p = sum_p;
+            tempvar sum_n = sum_n + (-3) ** 81;
+        }
+    }
 
     // %{
     //     from starkware.cairo.common.math_utils import as_int
