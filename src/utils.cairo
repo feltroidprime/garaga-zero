@@ -383,75 +383,81 @@ func sign{range_check_ptr}(value) -> felt {
 func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt, neg_3_pow: felt*) -> (
     sum_p: felt, sum_n: felt, p_sign: felt, n_sign: felt
 ) {
-    alloc_locals;
-    let (local digits: felt*) = alloc();
+    // alloc_locals;
+    // // let (local digits: felt*) = alloc();
     %{
         from garaga.hints.neg_3 import neg_3_base_le, positive_negative_multiplicities
+        from starkware.cairo.common.math_utils import as_int
         assert 0 <= ids.scalar < 2**128
         digits = neg_3_base_le(ids.scalar)
         digits = digits + [0] * (82-len(digits))
-        segments.write_arg(ids.digits, digits)
+        # segments.write_arg(ids.digits, digits)
+        i=1 # Loop.
     %}
-    let sum_p = 0;
-    let sum_n = 0;
-    if (digits[0] != 0) {
-        if (digits[0] == 1) {
+
+    tempvar d0;
+    %{ ids.d0 = digits[0] %}
+
+    if (d0 != 0) {
+        if (d0 == 1) {
             tempvar sum_p = 1;
-            tempvar sum_n = sum_n;
-            tempvar i = 1;
+            tempvar sum_n = 0;
+            tempvar pow3 = -3;
         } else {
-            tempvar sum_p = sum_p;
+            tempvar sum_p = 0;
             tempvar sum_n = 1;
-            tempvar i = 1;
+            tempvar pow3 = -3;
         }
     } else {
-        tempvar sum_p = sum_p;
-        tempvar sum_n = sum_n;
-        tempvar i = 1;
+        tempvar sum_p = 0;
+        tempvar sum_n = 0;
+        tempvar pow3 = -3;
     }
 
     loop:
-    let i = [ap - 1];
+    let pow3 = [ap - 1];
     let sum_n = [ap - 2];
     let sum_p = [ap - 3];
-    %{ memory[ap] = 1 if ids.i == 82 else 0 %}
+    %{ memory[ap] = 1 if i == 82 else 0 %}
     jmp end if [ap] != 0, ap++;
-    // %{
-    //     print(f"{memory[ids.digits+ids.i]=}")
-    //     print(f"\t {ids.sum_p=}")
-    //     print(f"\t {ids.sum_n=}")
-    // %}
-    if (digits[i] != 0) {
-        tempvar pow = neg_3_pow[i];
-        if (digits[i] == 1) {
-            tempvar sum_p = sum_p + pow;
+
+    %{ i+=1 %}
+
+    tempvar di;
+    %{ ids.di = digits[i-1] %}
+    if (di != 0) {
+        if (di == 1) {
+            // %{ print(f"d = 1, pow = {as_int(memory[ids.pow_ptr], PRIME)=}") %}
+            tempvar sum_p = sum_p + pow3;
             tempvar sum_n = sum_n;
-            tempvar i = i + 1;
+            tempvar pow3 = pow3 * (-3);
             jmp loop;
         } else {
+            // %{ print(f"d = -1, pow = {as_int(memory[ids.pow_ptr], PRIME)=}") %}
             tempvar sum_p = sum_p;
-            tempvar sum_n = sum_n + pow;
-            tempvar i = i + 1;
+            tempvar sum_n = sum_n + pow3;
+            tempvar pow3 = pow3 * (-3);
             jmp loop;
         }
     } else {
+        // %{ print(f"d = 0, pow = {as_int(memory[ids.pow_ptr], PRIME)=}") %}
         tempvar sum_p = sum_p;
         tempvar sum_n = sum_n;
-        tempvar i = i + 1;
+        tempvar pow3 = pow3 * (-3);
         jmp loop;
     }
 
     end:
-    let i = [ap - 2];
+    let pow3 = [ap - 2];
     let sum_n = [ap - 3];
     let sum_p = [ap - 4];
-    assert i = 82;
+    assert pow3 = (-3) ** 82;  //
 
-    // %{
-    //     from starkware.cairo.common.math_utils import as_int
-    //     print(f"{as_int(ids.sum_p, PRIME)=}")
-    //     print(f"{as_int(ids.sum_n, PRIME)=}")
-    // %}
+    %{
+        from starkware.cairo.common.math_utils import as_int
+        print(f"{as_int(ids.sum_p, PRIME)=}")
+        print(f"{as_int(ids.sum_n, PRIME)=}")
+    %}
     assert scalar = sum_p - sum_n;
 
     let p_sign = sign(sum_p);
@@ -552,7 +558,7 @@ func scalar_to_epns{range_check_ptr}(scalar: felt) -> (
     local digits: Neg3Digits;
 
     %{
-        from garaga.hints.neg_3 import neg_3_base_le, positive_negative_multiplicities
+        from garaga.hints.neg_3 import neg_3_base_le
 
         digits = neg_3_base_le(ids.scalar)
         digits = digits + [0] * (82-len(digits))
@@ -582,7 +588,6 @@ func scalar_to_epns{range_check_ptr}(scalar: felt) -> (
             tempvar sum_n = sum_n + (-3);
         }
     }
-
     if (digits.d2 != 0) {
         if (digits.d2 == 1) {
             tempvar sum_p = sum_p + (-3) ** 2;
@@ -602,6 +607,7 @@ func scalar_to_epns{range_check_ptr}(scalar: felt) -> (
             tempvar sum_n = sum_n + (-3) ** 3;
         }
     }
+
     if (digits.d4 != 0) {
         if (digits.d4 == 1) {
             tempvar sum_p = sum_p + (-3) ** 4;
@@ -611,6 +617,7 @@ func scalar_to_epns{range_check_ptr}(scalar: felt) -> (
             tempvar sum_n = sum_n + (-3) ** 4;
         }
     }
+
     if (digits.d5 != 0) {
         if (digits.d5 == 1) {
             tempvar sum_p = sum_p + (-3) ** 5;
