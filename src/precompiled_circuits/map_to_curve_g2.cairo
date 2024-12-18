@@ -845,12 +845,12 @@ func get_MAP_TO_CURVE_G2_FIRST_STEP_circuit(curve_id: felt) -> (circuit: ModuloC
     dw 376;  // Fp2 add imag part
     dw 400;
     dw 408;
-    dw 320;  // None
-    dw 412;
-    dw 0;
-    dw 416;  // None
+    dw 412;  // None
+    dw 416;
     dw 420;
-    dw 424;
+    dw 432;  // Fp2 Inv imag part end
+    dw 436;
+    dw 0;
     dw 444;  // Fp2 mul real part end
     dw 448;
     dw 440;
@@ -1006,23 +1006,23 @@ func get_MAP_TO_CURVE_G2_FIRST_STEP_circuit(curve_id: felt) -> (circuit: ModuloC
     dw 8;  // None
     dw 308;
     dw 396;
-    dw 308;  // None
+    dw 308;  // Fp2 Inv start
     dw 308;
-    dw 416;
+    dw 412;
     dw 320;  // None
     dw 320;
-    dw 420;
-    dw 424;  // None
-    dw 428;
+    dw 416;
+    dw 420;  // None
+    dw 424;
     dw 20;
-    dw 308;  // None
+    dw 308;  // Fp2 Inv real part end
+    dw 424;
     dw 428;
+    dw 320;  // None
+    dw 424;
     dw 432;
-    dw 412;  // None
-    dw 428;
-    dw 436;
     dw 404;  // Fp2 mul start
-    dw 432;
+    dw 428;
     dw 440;
     dw 408;  // None
     dw 436;
@@ -1031,7 +1031,7 @@ func get_MAP_TO_CURVE_G2_FIRST_STEP_circuit(curve_id: felt) -> (circuit: ModuloC
     dw 436;
     dw 452;
     dw 408;  // None
-    dw 432;
+    dw 428;
     dw 456;
 
     output_offsets_ptr_loc:

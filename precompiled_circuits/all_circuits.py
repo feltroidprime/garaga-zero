@@ -381,7 +381,9 @@ def main(
     """Compiles and writes all circuits to separate .cairo files"""
 
     # Write the header to each file
-    HEADER = compilation_mode_to_file_header(compilation_mode)
+    HEADER = compilation_mode_to_file_header(
+        compilation_mode, list(CIRCUITS_TO_COMPILE.keys())
+    )
 
     # Dictionary to store compiled circuits and selectors for each filename
     compiled_files = {}
