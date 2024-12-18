@@ -1,4 +1,4 @@
-.PHONY: build test coverage run run-profile
+.PHONY: build test run
 cairo_files = $(shell find ./tests/cairo_programs -name "*.cairo")
 
 build:
@@ -43,3 +43,7 @@ clean:
 
 hints:
 	./tools/make/gen_hints_document.py
+
+
+rewrite:
+	source venv/bin/activate && python precompiled_circuits/all_circuits.py

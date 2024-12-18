@@ -96,7 +96,4 @@ pre-commit install
 echo "Applying patch to instances.py..."
 patch venv/lib/python3.10/site-packages/starkware/cairo/lang/instances.py < tools/make/instances.patch
 
-echo "Applying patch to extension_field_modulo_circuit.py..."
-patch venv/lib/python3.10/site-packages/garaga/extension_field_modulo_circuit.py < tools/make/extension_field_modulo_circuit.patch
-
 echo "All done!"
