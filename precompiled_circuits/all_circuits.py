@@ -17,6 +17,7 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     DummyCircuit,
     EvalFunctionChallengeDuplCircuit,
     FinalizeFunctionChallengeDuplCircuit,
+    FullECIPCircuitBatched,
     InitFunctionChallengeDuplCircuit,
     IsOnCurveG1Circuit,
     IsOnCurveG1G2Circuit,
@@ -72,6 +73,7 @@ class CircuitID(Enum):
     MP_CHECK_FINALIZE_BLS = int.from_bytes(b"mp_check_finalize_bls", "big")
     FP12_MUL_ASSERT_ONE = int.from_bytes(b"fp12_mul_assert_one", "big")
     EVAL_E12D = int.from_bytes(b"eval_e12d", "big")
+    FULL_ECIP_BATCHED = int.from_bytes(b"full_ecip_batched", "big")
 
 
 def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
@@ -183,6 +185,11 @@ ALL_FUSTAT_CIRCUITS = {
     CircuitID.DOUBLE_EC_POINT: {
         "class": DoubleECPointCircuit,
         "params": None,
+        "filename": "ec",
+    },
+    CircuitID.FULL_ECIP_BATCHED: {
+        "class": FullECIPCircuitBatched,
+        "params": [{"n_points": k} for k in [1, 2]],
         "filename": "ec",
     },
 }
@@ -325,7 +332,7 @@ def main(
     """Compiles and writes all circuits to separate .cairo files"""
 
     # Write the header to each file
-    HEADER = compilation_mode_to_file_header(compilation_mode)
+    HEADER = compilation_mode_to_file_header(compilation_mode, None)
 
     # Dictionary to store compiled circuits and selectors for each filename
     compiled_files = {}

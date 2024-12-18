@@ -23,7 +23,6 @@ class DerivePointFromXCircuit(BaseModuloCircuit):
     ) -> None:
         super().__init__(
             name="derive_point_from_x",
-            input_len=3,  # X + b + G
             curve_id=curve_id,
             auto_run=auto_run,
             compilation_mode=compilation_mode,
@@ -58,12 +57,10 @@ class FP12MulCircuit(BaseEXTFCircuit):
         init_hash: int = None,
         compilation_mode: int = 0,
     ):
-        super().__init__(
-            "fp12_mul", 24, curve_id, auto_run, init_hash, compilation_mode
-        )
+        super().__init__("fp12_mul", curve_id, auto_run, init_hash, compilation_mode)
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(24)]
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit = ExtensionFieldModuloCircuit(
@@ -91,11 +88,11 @@ class FinalExpPart1Circuit(BaseEXTFCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            "final_exp_part_1", 12, curve_id, auto_run, init_hash, compilation_mode
+            "final_exp_part_1", curve_id, auto_run, init_hash, compilation_mode
         )
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(12)]
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit: final_exp.FinalExpTorusCircuit = final_exp.GaragaFinalExp[
@@ -123,11 +120,11 @@ class FinalExpPart2Circuit(BaseEXTFCircuit):
         compilation_mode: int = 0,
     ):
         super().__init__(
-            "final_exp_part_2", 12, curve_id, auto_run, init_hash, compilation_mode
+            "final_exp_part_2", curve_id, auto_run, init_hash, compilation_mode
         )
 
     def build_input(self) -> list[PyFelt]:
-        return [self.field(randint(0, self.field.p - 1)) for _ in range(self.input_len)]
+        return [self.field(randint(0, self.field.p - 1)) for _ in range(12)]
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ExtensionFieldModuloCircuit:
         circuit: final_exp.FinalExpTorusCircuit = final_exp.GaragaFinalExp[
@@ -150,7 +147,6 @@ class MultiMillerLoop(BaseEXTFCircuit):
         self.n_pairs = n_pairs
         super().__init__(
             f"multi_miller_loop_{n_pairs}",
-            6 * n_pairs,
             curve_id,
             auto_run,
             compilation_mode,
@@ -200,7 +196,6 @@ class MultiPairingCheck(BaseEXTFCircuit):
         self.n_pairs = n_pairs
         super().__init__(
             f"multi_pairing_check_{n_pairs}",
-            6 * n_pairs,
             curve_id,
             auto_run,
             compilation_mode,
