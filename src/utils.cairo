@@ -383,16 +383,13 @@ func sign{range_check_ptr}(value) -> felt {
 func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt, neg_3_pow: felt*) -> (
     sum_p: felt, sum_n: felt, p_sign: felt, n_sign: felt
 ) {
-    // alloc_locals;
-    // // let (local digits: felt*) = alloc();
     %{
         from garaga.hints.neg_3 import neg_3_base_le, positive_negative_multiplicities
         from starkware.cairo.common.math_utils import as_int
         assert 0 <= ids.scalar < 2**128
         digits = neg_3_base_le(ids.scalar)
         digits = digits + [0] * (82-len(digits))
-        # segments.write_arg(ids.digits, digits)
-        i=1 # Loop.
+        i=1 # Loop init
     %}
 
     tempvar d0;
@@ -427,20 +424,17 @@ func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt, neg_3_pow: felt*) -> 
     %{ ids.di = digits[i-1] %}
     if (di != 0) {
         if (di == 1) {
-            // %{ print(f"d = 1, pow = {as_int(memory[ids.pow_ptr], PRIME)=}") %}
             tempvar sum_p = sum_p + pow3;
             tempvar sum_n = sum_n;
             tempvar pow3 = pow3 * (-3);
             jmp loop;
         } else {
-            // %{ print(f"d = -1, pow = {as_int(memory[ids.pow_ptr], PRIME)=}") %}
             tempvar sum_p = sum_p;
             tempvar sum_n = sum_n + pow3;
             tempvar pow3 = pow3 * (-3);
             jmp loop;
         }
     } else {
-        // %{ print(f"d = 0, pow = {as_int(memory[ids.pow_ptr], PRIME)=}") %}
         tempvar sum_p = sum_p;
         tempvar sum_n = sum_n;
         tempvar pow3 = pow3 * (-3);
