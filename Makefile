@@ -1,4 +1,4 @@
-.PHONY: build test coverage run run-profile
+.PHONY: build test run
 cairo_files = $(shell find ./tests/cairo_programs -name "*.cairo")
 
 build:

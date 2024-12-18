@@ -333,11 +333,9 @@ func scalars_to_epns_low_high_inner{range_check_ptr}(
     if (index == n) {
         return ();
     } else {
-        let (epi_low, eni_low, p_sign_low, n_sign_low) = scalar_to_base_neg3_le(
-            scalars[index].low, neg_3_pow
-        );
+        let (epi_low, eni_low, p_sign_low, n_sign_low) = scalar_to_base_neg3_le(scalars[index].low);
         let (epi_high, eni_high, p_sign_high, n_sign_high) = scalar_to_base_neg3_le(
-            scalars[index].high, neg_3_pow
+            scalars[index].high
         );
         assert [epns_low] = epi_low;
         assert [epns_low + 1] = eni_low;
