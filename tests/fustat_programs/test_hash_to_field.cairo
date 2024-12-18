@@ -21,9 +21,7 @@ func main{
     let (pow2_array) = pow2alloc128();
 
     local n_fp2_tests;
-    %{
-        ids.n_fp2_tests = len(program_input["fp2"])
-    %}
+    %{ ids.n_fp2_tests = len(program_input["fp2"]) %}
 
     with sha256_ptr, pow2_array {
         test_fp2_hash_to_field(0, n_fp2_tests);

@@ -212,10 +212,7 @@ func add_ec_points_g2{
 }
 
 func derive_g1_point_from_x{
-    range_check_ptr,
-    range_check96_ptr: felt*,
-    add_mod_ptr: ModBuiltin*,
-    mul_mod_ptr: ModBuiltin*,
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
 }(curve_id: felt, x: UInt384, s: UInt384) -> (res: G1Point) {
     alloc_locals;
 

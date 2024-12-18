@@ -9,7 +9,7 @@ from definitions import get_P
 from utils import felt_divmod
 from sha import SHA256, HashUtils
 
-//DST: BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_
+// DST: BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_
 namespace HashToField {
     const B_IN_BYTES = 32;  // hash function output size
     const B_IN_FELTS = 8;  // 32 bytes, require 8 chunks
@@ -81,7 +81,7 @@ namespace HashToField {
         with_attr error_message("Message length must be a multiple of 4 bytes") {
             assert remainder = 0;
         }
-        let msg_felts = msg_bytes_len / 4; // safe since we already verified it's a multiple of 4
+        let msg_felts = msg_bytes_len / 4;  // safe since we already verified it's a multiple of 4
 
         let (q, r) = felt_divmod(n_bytes, 32);
         local ell: felt;

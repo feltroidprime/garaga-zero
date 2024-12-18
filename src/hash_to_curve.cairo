@@ -13,7 +13,7 @@ from ec_ops import add_ec_points_g2
 from precompiled_circuits.map_to_curve_g2 import (
     get_MAP_TO_CURVE_G2_FIRST_STEP_circuit,
     get_MAP_TO_CURVE_G2_FIN_QUAD_circuit,
-    get_MAP_TO_CURVE_G2_FIN_NON_QUAD_circuit
+    get_MAP_TO_CURVE_G2_FIN_NON_QUAD_circuit,
 )
 from precompiled_circuits.isogeny_g2 import get_ISOGENY_G2_circuit
 from precompiled_circuits.cofactor_clearing import get_G2_COFACTOR_CLEARING_circuit
@@ -50,17 +50,17 @@ func map_to_curve_g2{
     range_check96_ptr: felt*,
     add_mod_ptr: ModBuiltin*,
     mul_mod_ptr: ModBuiltin*,
-    pow2_array: felt*
+    pow2_array: felt*,
 }(field: UInt384*, curve_id: felt) -> (point: G2Point) {
     alloc_locals;
 
     let (circuit) = get_MAP_TO_CURVE_G2_FIRST_STEP_circuit(curve_id);
     let (local input: felt*) = alloc();
-    assert input[0] = field[0].d0; // x
+    assert input[0] = field[0].d0;  // x
     assert input[1] = field[0].d1;
     assert input[2] = field[0].d2;
     assert input[3] = field[0].d3;
-    assert input[4] = field[1].d0; // y
+    assert input[4] = field[1].d0;  // y
     assert input[5] = field[1].d1;
     assert input[6] = field[1].d2;
     assert input[7] = field[1].d3;
@@ -167,7 +167,6 @@ func clear_cofactor_g2{
     let (output) = run_modulo_circuit(circuit, input);
 
     return (point=[cast(output, G2Point*)]);
-
 }
 
 func hex_print_field(field: UInt384) {
@@ -188,8 +187,6 @@ func print_field(field: UInt384) {
     return ();
 }
 
-
-
 func print_g2(point: G2Point) {
     let l0 = point.x0;
     let l1 = point.x1;
@@ -205,7 +202,6 @@ func print_g2(point: G2Point) {
         print("y0",bigint_pack(ids.l2, 4, 2**96))
         print("y1",bigint_pack(ids.l3, 4, 2**96))
         print("________________________________")
-
     %}
 
     return ();
@@ -226,7 +222,6 @@ func hex_print_g2(point: G2Point) {
         print("y0", hex(bigint_pack(ids.l2, 4, 2**96)))
         print("y1", hex(bigint_pack(ids.l3, 4, 2**96)))
         print("________________________________")
-
     %}
 
     return ();
