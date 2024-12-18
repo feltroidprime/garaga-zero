@@ -380,7 +380,7 @@ func sign{range_check_ptr}(value) -> felt {
 // Where sum_p = sum(digits[i] * (-3)^i for i in [0, 81] if digits[i]==1)
 // And sum_n = sum(digits[i] * (-3)^i for i in [0, 81] if digits[i]==-1)
 // Returns (abs(sum_p), abs(sum_n), p_sign, n_sign)
-func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt, neg_3_pow: felt*) -> (
+func scalar_to_base_neg3_le{range_check_ptr}(scalar: felt) -> (
     sum_p: felt, sum_n: felt, p_sign: felt, n_sign: felt
 ) {
     %{
