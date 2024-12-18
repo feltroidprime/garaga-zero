@@ -4,19 +4,17 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bitwise import bitwise_xor
 
-from src.basic_field_ops import u512_mod_p
-from src.definitions import get_P
-from src.utils import felt_divmod
-from src.sha import SHA256, HashUtils
+from basic_field_ops import u512_mod_p
+from definitions import get_P
+from utils import felt_divmod
+from sha import SHA256, HashUtils
 
-// HashToField functionality, using SHA256 and 32-byte messages
-// DST is "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_"
-namespace HashToField32 {
+// DST: BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_
+namespace HashToField {
     const B_IN_BYTES = 32;  // hash function output size
     const B_IN_FELTS = 8;  // 32 bytes, require 8 chunks
     const Z_PAD_LEN = B_IN_FELTS * 2;
     const BYTES_PER_CHUNK = 4;
-    const CURVE_M = 2;  // extension degree of F
     const CURVE_K = 128;  // security level
     const CURVE_L = 64;  // ceil((CURVE.P.bitlength + CURVE_K) / 8)
     const CURVE_L_IN_FELTS = 16;  // 64 bits, require 16 chunks
@@ -57,7 +55,7 @@ namespace HashToField32 {
         assert [one_dst + 7] = 0x3235365F;
         assert [one_dst + 8] = 0x53535755;
         assert [one_dst + 9] = 0x5F524F5F;
-        assert [one_dst + 10] = 0x4E554C5F;
+        assert [one_dst + 10] = 0x504F505F;
         assert [one_dst + 11] = 0x2B;
 
         return one_dst;
@@ -78,8 +76,12 @@ namespace HashToField32 {
     }(msg: felt*, msg_bytes_len: felt, n_bytes: felt) -> (result: felt*) {
         alloc_locals;
 
-        // for now we only support 32 bytes messages. Some smaller changes are needed to support other msg lengths
-        assert msg_bytes_len = 32;
+        // Verify msg_bytes_len is a multiple of 4
+        let (_, remainder) = felt_divmod(msg_bytes_len, 4);
+        with_attr error_message("Message length must be a multiple of 4 bytes") {
+            assert remainder = 0;
+        }
+        let msg_felts = msg_bytes_len / 4;  // safe since we already verified it's a multiple of 4
 
         let (q, r) = felt_divmod(n_bytes, 32);
         local ell: felt;
@@ -97,21 +99,22 @@ namespace HashToField32 {
         // Prepare the initial hash input:
         // Z_pad || msg || N_BYTES ||  0x0 || DST || len(DST)
         let msg_hash_train = Z_PAD();
-        memcpy(dst=msg_hash_train + Z_PAD_LEN, src=msg, len=8);
+        memcpy(dst=msg_hash_train + Z_PAD_LEN, src=msg, len=msg_felts);
+        tempvar offset = Z_PAD_LEN + msg_felts;
 
         // Append other required values (DST and lengths)
-        assert [msg_hash_train + 24] = 0x01000042;  // to_bytes(n_bytes, 2) + 0x0 + DST (starts at 42)
-        assert [msg_hash_train + 25] = 0x4C535F53;
-        assert [msg_hash_train + 26] = 0x49475F42;
-        assert [msg_hash_train + 27] = 0x4C533132;
-        assert [msg_hash_train + 28] = 0x33383147;
-        assert [msg_hash_train + 29] = 0x325F584D;
-        assert [msg_hash_train + 30] = 0x443A5348;
-        assert [msg_hash_train + 31] = 0x412D3235;
-        assert [msg_hash_train + 32] = 0x365F5353;
-        assert [msg_hash_train + 33] = 0x57555F52;
-        assert [msg_hash_train + 34] = 0x4F5F4E55;
-        assert [msg_hash_train + 35] = 0x4C5F2B;  // DST + DST.len
+        assert [msg_hash_train + offset] = 0x01000042;  // to_bytes(n_bytes, 2) + 0x0 + DST (starts at 42)
+        assert [msg_hash_train + offset + 1] = 0x4C535F53;
+        assert [msg_hash_train + offset + 2] = 0x49475F42;
+        assert [msg_hash_train + offset + 3] = 0x4C533132;
+        assert [msg_hash_train + offset + 4] = 0x33383147;
+        assert [msg_hash_train + offset + 5] = 0x325F584D;
+        assert [msg_hash_train + offset + 6] = 0x443A5348;
+        assert [msg_hash_train + offset + 7] = 0x412D3235;
+        assert [msg_hash_train + offset + 8] = 0x365F5353;
+        assert [msg_hash_train + offset + 9] = 0x57555F52;
+        assert [msg_hash_train + offset + 10] = 0x4F5F504F;
+        assert [msg_hash_train + offset + 11] = 0x505F2B;  // DST + DST.len
 
         // Compute the initial hash (b_0)
         let (msg_hash) = SHA256.hash_bytes(msg_hash_train, 111 + msg_bytes_len);  // 64b z_pad + msg_bytes_len + 2b block_size, 0x0 ++ 43b dst + 1b dst_len
@@ -178,7 +181,7 @@ namespace HashToField32 {
     //
     // Parameters:
     // - msg: a byte string containing the message to hash, chunked in big-endian 4-bytes
-    // - msg_bytes_len: length of the message in bytes
+    // - msg_bytes_len: length of the message in bytes, must be a multiple of 4
     // - count: the number of field elements to output
     // - ext_degree: the degree of the extension field
     //
@@ -248,11 +251,6 @@ namespace HashToField32 {
         }
 
         let (result) = _u512_mod_p(expanded_msg + offset);
-        // %{
-        //     from garaga.hints.io import bigint_pack
-        //     result = bigint_pack(ids.result, 4, 2**96)
-        //     print(hex(result))
-        // %}
         assert fields[degree_index] = result;
 
         return hash_to_field_inner_inner(
