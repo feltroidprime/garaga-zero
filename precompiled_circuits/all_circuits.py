@@ -26,7 +26,7 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
 )
 from precompiled_circuits.compilable_circuits.fustat_only import (
     AddECPointsG2Circuit,
-    DeriveG1PointFromXCircuit,
+    DecompressG1PointCircuit,
     DerivePointFromXCircuit,
     FastG2CofactorClearingCircuit,
     FinalExpPart1Circuit,
@@ -134,7 +134,7 @@ ALL_FUSTAT_CIRCUITS = {
         "filename": "ec",
     },
     CircuitID.DERIVE_G1_POINT_FROM_X: {
-        "class": DeriveG1PointFromXCircuit,
+        "class": DecompressG1PointCircuit,
         "params": None,
         "filename": "ec",
     },

@@ -18,7 +18,7 @@ from garaga.precompiled_circuits.compilable_circuits.base import (
 )
 from garaga.precompiled_circuits.ec import (
     BasicECG2,
-    DeriveG1PointFromX,
+    DecompressG1Point,
     DerivePointFromX,
 )
 from garaga.precompiled_circuits.isogeny import IsogenyG2
@@ -57,7 +57,7 @@ class DerivePointFromXCircuit(BaseModuloCircuit):
         return circuit
 
 
-class DeriveG1PointFromXCircuit(BaseModuloCircuit):
+class DecompressG1PointCircuit(BaseModuloCircuit):
     def __init__(
         self, curve_id: int, auto_run: bool = True, compilation_mode: int = 0
     ) -> None:
@@ -76,7 +76,7 @@ class DeriveG1PointFromXCircuit(BaseModuloCircuit):
         return input
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
-        circuit = DeriveG1PointFromX(
+        circuit = DecompressG1Point(
             self.name, self.curve_id, compilation_mode=self.compilation_mode
         )
         b, x, s = circuit.write_elements(input[0:3], WriteOps.INPUT)
