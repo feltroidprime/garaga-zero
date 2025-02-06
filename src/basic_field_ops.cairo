@@ -13,7 +13,8 @@ const BASE_MIN_ONE = 2 ** 96 - 1;
 func uint384_is_le{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(a: UInt384, b: UInt384) -> (
     res: felt
 ) {
-    tempvar flag;
+    alloc_locals;
+    local flag;
     %{
         from garaga.hints.io import bigint_pack
         a = bigint_pack(ids.a, 4, 2**96)
@@ -163,7 +164,7 @@ func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     return (x_plus_y=[cast(range_check96_ptr - 4, UInt384*)]);
 
     add_offsets:
-    // Instruction : assert 0 + 4 == 8
+    // Instruction : assert 0 + 4 == 8cla
     dw 0;  // X
     dw 4;  // Y
     dw 8;  // X+Y

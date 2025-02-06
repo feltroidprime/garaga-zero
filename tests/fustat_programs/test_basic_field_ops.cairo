@@ -63,9 +63,9 @@ func main{
 
     assert_not_opposite_mod_p(four, eight, P);
 
-    let (true0) = uint384_is_le(four, eight, P);
-    let (true1) = uint384_is_le(four, four, P);
-    let (false) = uint384_is_le(eight, four, P);
+    let (true0) = uint384_is_le(four, eight);
+    let (true1) = uint384_is_le(four, four);
+    let (false) = uint384_is_le(eight, four);
 
     assert true0 = 1;
     assert true1 = 1;
