@@ -10,7 +10,9 @@ const BASE_MIN_ONE = 2 ** 96 - 1;
 // Assumptions :
 // - a and b are valid UInt384 values (range checked limbs)
 // - a <= 2**384 - 2 (behaviour unclear otherwise).
-func uint384_is_le{range_check96_ptr: felt*}(a: UInt384, b: UInt384) -> (res: felt) {
+func uint384_is_le{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(a: UInt384, b: UInt384) -> (
+    res: felt
+) {
     tempvar flag;
     %{
         from garaga.hints.io import bigint_pack
@@ -25,7 +27,7 @@ func uint384_is_le{range_check96_ptr: felt*}(a: UInt384, b: UInt384) -> (res: fe
         return (res=1);
     } else {
         // a > b <=> b < a <=> b <= a+1
-        let a_plus_one = add_mod_p(
+        let (a_plus_one) = add_mod_p(
             a, UInt384(1, 0, 0, 0), UInt384(BASE_MIN_ONE, BASE_MIN_ONE, BASE_MIN_ONE, BASE_MIN_ONE)
         );
         uint384_assert_le(b, a_plus_one);
