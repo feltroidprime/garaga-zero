@@ -17,6 +17,7 @@ from basic_field_ops import (
     is_eq_mod_p,
     assert_opposite_mod_p,
     assert_not_opposite_mod_p,
+    uint384_is_le,
 )
 
 func main{
@@ -61,5 +62,14 @@ func main{
     assert_opposite_mod_p(zero, zero, P);
 
     assert_not_opposite_mod_p(four, eight, P);
+
+    let (true0) = uint384_is_le(four, eight, P);
+    let (true1) = uint384_is_le(four, four, P);
+    let (false) = uint384_is_le(eight, four, P);
+
+    assert true0 = 1;
+    assert true1 = 1;
+    assert false = 0;
+
     return ();
 }

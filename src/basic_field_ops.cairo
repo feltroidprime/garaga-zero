@@ -377,7 +377,7 @@ func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
 
         ModBuiltinRunner.fill_memory(
             memory=memory,
-            add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 2),
+            add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 1),
             mul_mod=None,
         )
     %}
@@ -385,11 +385,11 @@ func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
     return ();
 
-    // Compute 0 - X (X + (-X) = 0)
+    // Assert X + 0 == Y
     add_offsets:
-    dw 4;
-    dw 0;  // - X
-    dw 8;
+    dw 4;  // X
+    dw 0;  // 0
+    dw 8;  // Y
 }
 
 // assert X != Y mod p by asserting (X-Y) != 0
