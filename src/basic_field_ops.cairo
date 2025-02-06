@@ -71,6 +71,8 @@ func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr:
     dw 16;  // [Low + High * Shift]
 }
 
+
+
 // Compute X + Y mod p.
 func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384
@@ -600,4 +602,69 @@ func is_opposite_mod_p{
         assert_not_opposite_mod_p(x, y, p);
         return (res=0);
     }
+}
+
+const UINT384_LIMB_BOUND = 2 ** 96;
+
+// Returns 1 if 0 <= value < 2^96.
+// Returns 0 otherwise.
+// Uses range_check96_ptr for efficient 96-bit range checks
+func is_nn_96{range_check96_ptr: felt*}(value) -> felt {
+
+    %{ memory[ap] = 0 if 0 <= (ids.value % PRIME) < ids.UINT384_LIMB_BOUND else 1 %}
+    jmp out_of_range if [ap] != 0, ap++;
+
+    // If in range, verify value directly using range_check96_ptr
+    assert [range_check96_ptr] = value;
+    let range_check96_ptr = range_check96_ptr + 1;
+    return 1;
+
+    out_of_range:
+    // If out of range, value must be negative
+    // Check if -value-1 is in range [0, 2^96)
+    %{ memory[ap] = 0 if 0 <= ((-ids.value - 1) % PRIME) < ids.UINT384_LIMB_BOUND else 1 %}
+    jmp invalid if [ap] != 0, ap++;
+
+    assert [range_check96_ptr] = (-value) - 1;
+    let range_check96_ptr = range_check96_ptr + 1;
+    return 0;
+
+    invalid:
+    // If we get here, value ≥ 2^96
+    assert [range_check96_ptr] = value - UINT384_LIMB_BOUND;
+    let range_check96_ptr = range_check96_ptr + 1;
+    return 0;
+}
+
+// Checks if a <= b where a and b are 96-bit limbs.
+// Returns 1 if true, 0 otherwise.
+// Assumes inputs are valid 96-bit values (0 <= a,b < 2^96)
+func is_le_96{range_check96_ptr: felt*}(a: felt, b: felt) -> felt {
+    let diff = b - a;
+    return is_nn_96(diff);
+}
+
+// Returns 1 if the first unsigned integer is less than the second unsigned integer.
+func uint384_lt{range_check96_ptr: felt*}(a: UInt384, b: UInt384) -> (res: felt) {
+    // Compare d3 (most significant limb)
+    if (a.d3 != b.d3) {
+        let is_lt = is_le_96(a.d3 + 1, b.d3);
+        return (res=is_lt);
+    }
+
+    // Compare d2
+    if (a.d2 != b.d2) {
+        let is_lt = is_le_96(a.d2 + 1, b.d2);
+        return (res=is_lt);
+    }
+
+    // Compare d1
+    if (a.d1 != b.d1) {
+        let is_lt = is_le_96(a.d1 + 1, b.d1);
+        return (res=is_lt);
+    }
+
+    // Compare d0 (least significant limb)
+    let is_lt = is_le_96(a.d0 + 1, b.d0);
+    return (res=is_lt);
 }

@@ -297,10 +297,10 @@ class MapToCurveG2Part1Circuit(BaseModuloCircuit):
         return circuit
 
 
-class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
+class MapToCurveG2ComputeInialCoordinatesQuadratic(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
-            name="map_to_curve_g2_fin_quad",
+            name="map_to_curve_g2_quad",
             curve_id=curve_id,
             compilation_mode=compilation_mode,
         )
@@ -329,20 +329,26 @@ class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
         g1x = circuit.write_elements(input[2:4], WriteOps.INPUT)
         div = circuit.write_elements(input[4:6], WriteOps.INPUT)
         num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT)
-        intermediate_values = circuit.finalize_map_to_curve_quadratic(
+        intermediate_values = circuit.compute_initial_coordinates_quadratic(
             field, g1x, div, num_x1
         )
 
         circuit.extend_output(intermediate_values[0])  # x_affine
-        circuit.extend_output(intermediate_values[1])  # y_affine
+        circuit.extend_output(intermediate_values[1])  # y_initial
+        circuit.extend_output(intermediate_values[2])  # field
+
+        print("GARAGA-ZERO - INITIAL")
+        print(f"x_affine: {intermediate_values[0]}")
+        print(f"y: {intermediate_values[1]}")
+        print(f"field: {intermediate_values[2]}")
 
         return circuit
 
 
-class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
+class MapToCurveG2ComputeInitialCoordinatesNonQuadratic(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
-            name="map_to_curve_g2_fin_non_quad",
+            name="map_to_curve_g2_non_quad",
             curve_id=curve_id,
             compilation_mode=compilation_mode,
         )
@@ -374,12 +380,59 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
         div = circuit.write_elements(input[4:6], WriteOps.INPUT)
         num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT)
         zeta_u2 = circuit.write_elements(input[8:10], WriteOps.INPUT)
-        intermediate_values = circuit.finalize_map_to_curve_non_quadratic(
+        intermediate_values = circuit.compute_initial_coordinates_non_quadratic(
             field, g1x, div, num_x1, zeta_u2
         )
 
         circuit.extend_output(intermediate_values[0])  # x_affine
-        circuit.extend_output(intermediate_values[1])  # y_affine
+        circuit.extend_output(intermediate_values[1])  # y_initial
+        circuit.extend_output(intermediate_values[2])  # field
+
+        print("GARAGA-ZERO - INITIAL")
+        print(f"x_affine: {intermediate_values[0]}")
+        print(f"y: {intermediate_values[1]}")
+        print(f"field: {intermediate_values[2]}")
+        print("_________________")
+        return circuit
+
+
+class MapToCurveG2AdjustYSign(BaseModuloCircuit):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
+        super().__init__(
+            name="map_to_curve_g2_adj_y",
+            curve_id=curve_id,
+            compilation_mode=compilation_mode,
+        )
+
+    def build_input(self) -> list[PyFelt]:
+        return [
+            self.field(randint(0, 1000000)),  # field
+            self.field(1),  # 0
+            self.field(randint(0, 1000000)),  # y_initial
+            self.field(1),  # 0
+        ]
+
+    def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
+        circuit = MapToCurveG2(
+            self.name,
+            self.curve_id,
+            compilation_mode=self.compilation_mode,
+        )
+        circuit.set_consts()
+        field = circuit.write_elements(input[0:2], WriteOps.INPUT)
+        y_initial = circuit.write_elements(input[2:4], WriteOps.INPUT)
+
+        intermediate_values = circuit.adjust_y_sign(field, y_initial)
+
+        circuit.extend_output(intermediate_values[0])  # y_affine
+        circuit.extend_output([intermediate_values[1]])  # qfield
+        circuit.extend_output([intermediate_values[2]])  # qy
+
+        print("GARAGA-ZERO - ADJUST Y")
+        print(f"y_affine: {intermediate_values[0]}")
+        print(f"qfield: {intermediate_values[1]}")
+        print(f"qy: {intermediate_values[2]}")
+        print("_________________")
 
         return circuit
 
