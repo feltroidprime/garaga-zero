@@ -82,7 +82,7 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 60;  // None
     dw 116;
     dw 20;
-    dw 36;  // None
+    dw 28;  // None
     dw 20;
     dw 120;
     dw 60;  // None
@@ -109,7 +109,7 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 84;  // None
     dw 196;
     dw 20;
-    dw 28;  // None
+    dw 36;  // None
     dw 20;
     dw 200;
     dw 84;  // None
@@ -145,10 +145,10 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 268;  // None
     dw 296;
     dw 20;
-    dw 36;  // Fp2 sub coeff 0/1
+    dw 28;  // Fp2 sub coeff 0/1
     dw 300;
     dw 0;
-    dw 40;  // Fp2 sub coeff 1/1
+    dw 32;  // Fp2 sub coeff 1/1
     dw 304;
     dw 0;
     dw 312;  // Fp2 mul real part end
@@ -168,13 +168,13 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 96;
     dw 100;  // Validate x0 decomposition
     dw 48;
-    dw 36;
+    dw 28;
     dw 0;  // Ensure r1 ∈ {0,1}
     dw 0;
     dw 108;
     dw 112;  // Validate x1 decomposition
     dw 56;
-    dw 40;
+    dw 32;
     dw 128;  // None
     dw 132;
     dw 20;
@@ -183,13 +183,13 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 176;
     dw 180;  // Validate x0 decomposition
     dw 72;
-    dw 28;
+    dw 36;
     dw 0;  // Ensure r1 ∈ {0,1}
     dw 0;
     dw 188;
     dw 192;  // Validate x1 decomposition
     dw 80;
-    dw 32;
+    dw 40;
     dw 208;  // None
     dw 212;
     dw 20;
@@ -207,7 +207,7 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 52;  // None
     dw 24;
     dw 112;
-    dw 36;  // None
+    dw 28;  // None
     dw 64;
     dw 124;
     dw 60;  // None
@@ -240,7 +240,7 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 76;  // None
     dw 24;
     dw 192;
-    dw 28;  // None
+    dw 36;  // None
     dw 88;
     dw 204;
     dw 84;  // None
@@ -268,16 +268,16 @@ func get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id: felt) -> (circuit: ModuloCircui
     dw 252;
     dw 256;
     dw 268;  // Fp2 mul start
-    dw 36;
+    dw 28;
     dw 272;
     dw 0;  // None
-    dw 40;
+    dw 32;
     dw 276;
     dw 268;  // None
-    dw 40;
+    dw 32;
     dw 284;
     dw 0;  // None
-    dw 36;
+    dw 28;
     dw 288;
     dw 296;  // Fp2 mul start
     dw 300;
