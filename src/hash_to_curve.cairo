@@ -19,7 +19,7 @@ from precompiled_circuits.map_to_curve_g2 import (
 from precompiled_circuits.isogeny_g2 import get_ISOGENY_G2_circuit
 from precompiled_circuits.cofactor_clearing import get_G2_COFACTOR_CLEARING_circuit
 from modulo_circuit import run_modulo_circuit, ModuloCircuit
-from basic_field_ops import uint384_lt
+from basic_field_ops import uint384_is_le
 
 func hash_to_curve{
     range_check_ptr,
@@ -34,6 +34,7 @@ func hash_to_curve{
     // First we hash the message to field elements
     let (chunks) = HashUtils.chunk_uint256(msg);
     let (res) = HashToField.hash_to_field(chunks, 32, 2, 2);
+
 
     // The use simple swu to map the field elements to the curve
     let (p1) = map_to_curve_g2(res[0], curve_id);
@@ -100,13 +101,6 @@ func map_to_curve_g2{
 
     let (output: felt*) = run_modulo_circuit(circuit, input);
 
-    // %{
-    //     i = 0
-    //     while i < 24:
-    //         print(f"{i}: {hex(memory[ids.output + i])}")
-    //         i += 1
-    // %}
-
     let (second_input: felt*) = alloc();
     memcpy(second_input, output + 8, 16);
 
@@ -116,6 +110,7 @@ func map_to_curve_g2{
         d2 = output[2],
         d3 = output[3],
     );
+
     let x1 = UInt384(
         d0 = output[4],
         d1 = output[5],
@@ -123,52 +118,28 @@ func map_to_curve_g2{
         d3 = output[7],
     );
 
-
-
     let (adjust_y_circuit) = get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id);
     let (second_output: felt*) = run_modulo_circuit(adjust_y_circuit, second_input);
 
-    let y0 = UInt384(
-        d0 = second_output[0],
-        d1 = second_output[1],
-        d2 = second_output[2],
-        d3 = second_output[3],
+    // Cast the output array to UInt384 array for easier access
+    let values = cast(second_output, UInt384*);
+    let y0 = values[0];
+    let y1 = values[1];
+    let qfield = values[2];
+    let qy = values[3];
+
+    let q_max = UInt384(
+        d0 = bls.PH3,
+        d1 = bls.PH2,
+        d2 = bls.PH1,
+        d3 = bls.PH0,
     );
 
-    let y1 = UInt384(
-        d0 = second_output[4],
-        d1 = second_output[5],
-        d2 = second_output[6],
-        d3 = second_output[7],
-    );
+    let (q_max_minus_y0) = uint384_is_le(qfield, q_max);
+    assert q_max_minus_y0 = 1;
 
-    let qfield = UInt384(
-        d0 = second_output[8],
-        d1 = second_output[9],
-        d2 = second_output[10],
-        d3 = second_output[11],
-    );
-
-    let qy = UInt384(
-        d0 = second_output[12],
-        d1 = second_output[13],
-        d2 = second_output[14],
-        d3 = second_output[15],
-    );
-
-    // let q_max = UInt384(
-    //     d0 = bls.PH3,
-    //     d1 = bls.PH2,
-    //     d2 = bls.PH1,
-    //     d3 = bls.PH0,
-    // );
-
-    // let (q_max_minus_y0) = uint384_lt(qfield, q_max);
-    // assert q_max_minus_y0 = 1;
-
-    // let (q_max_minus_y1) = uint384_lt(qy, q_max);
-    // assert q_max_minus_y1 = 1;
-
+    let (q_max_minus_y1) = uint384_is_le(qy, q_max);
+    assert q_max_minus_y1 = 1;
 
     let res = G2Point(
         x0 = x0,
