@@ -18,7 +18,7 @@ from garaga.precompiled_circuits.compilable_circuits.base import (
 )
 from garaga.precompiled_circuits.ec import (
     BasicECG2,
-    DeriveG1PointFromX,
+    DecompressG1Point,
     DerivePointFromX,
 )
 from garaga.precompiled_circuits.isogeny import IsogenyG2
@@ -57,12 +57,12 @@ class DerivePointFromXCircuit(BaseModuloCircuit):
         return circuit
 
 
-class DeriveG1PointFromXCircuit(BaseModuloCircuit):
+class DecompressG1PointCircuit(BaseModuloCircuit):
     def __init__(
         self, curve_id: int, auto_run: bool = True, compilation_mode: int = 0
     ) -> None:
         super().__init__(
-            name="derive_g1_point_from_x",
+            name="decompress_g1_point",
             curve_id=curve_id,
             auto_run=auto_run,
             compilation_mode=compilation_mode,
@@ -72,16 +72,16 @@ class DeriveG1PointFromXCircuit(BaseModuloCircuit):
         input = []
         input.append(self.field(CURVES[self.curve_id].b))  # y^2 = x^3 + b
         input.append(self.field(G1Point.gen_random_point(CurveID(self.curve_id)).x))
-        input.append(self.field(0))
         return input
 
     def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
-        circuit = DeriveG1PointFromX(
+        circuit = DecompressG1Point(
             self.name, self.curve_id, compilation_mode=self.compilation_mode
         )
-        b, x, s = circuit.write_elements(input[0:3], WriteOps.INPUT)
-        point = circuit.derive_y_from_x(b, x, s)
-        circuit.extend_output([point])
+        b, x = circuit.write_elements(input[0:2], WriteOps.INPUT)
+        y, y_neg = circuit.derive_y_from_x(b, x)
+
+        circuit.extend_output([y, y_neg])
 
         return circuit
 
@@ -297,10 +297,10 @@ class MapToCurveG2Part1Circuit(BaseModuloCircuit):
         return circuit
 
 
-class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
+class MapToCurveG2ComputeInialCoordinatesQuadratic(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
-            name="map_to_curve_g2_fin_quad",
+            name="map_to_curve_g2_quad",
             curve_id=curve_id,
             compilation_mode=compilation_mode,
         )
@@ -329,20 +329,20 @@ class MapToCurveG2FinalizeQuadResCircuit(BaseModuloCircuit):
         g1x = circuit.write_elements(input[2:4], WriteOps.INPUT)
         div = circuit.write_elements(input[4:6], WriteOps.INPUT)
         num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT)
-        intermediate_values = circuit.finalize_map_to_curve_quadratic(
+        intermediate_values = circuit.compute_initial_coordinates_quadratic(
             field, g1x, div, num_x1
         )
 
         circuit.extend_output(intermediate_values[0])  # x_affine
-        circuit.extend_output(intermediate_values[1])  # y_affine
-
+        circuit.extend_output(intermediate_values[1])  # y_initial
+        circuit.extend_output(intermediate_values[2])  # field
         return circuit
 
 
-class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
+class MapToCurveG2ComputeInitialCoordinatesNonQuadratic(BaseModuloCircuit):
     def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
         super().__init__(
-            name="map_to_curve_g2_fin_non_quad",
+            name="map_to_curve_g2_non_quad",
             curve_id=curve_id,
             compilation_mode=compilation_mode,
         )
@@ -374,12 +374,47 @@ class MapToCurveG2FinalizeNonQuadResCircuit(BaseModuloCircuit):
         div = circuit.write_elements(input[4:6], WriteOps.INPUT)
         num_x1 = circuit.write_elements(input[6:8], WriteOps.INPUT)
         zeta_u2 = circuit.write_elements(input[8:10], WriteOps.INPUT)
-        intermediate_values = circuit.finalize_map_to_curve_non_quadratic(
+        intermediate_values = circuit.compute_initial_coordinates_non_quadratic(
             field, g1x, div, num_x1, zeta_u2
         )
 
         circuit.extend_output(intermediate_values[0])  # x_affine
-        circuit.extend_output(intermediate_values[1])  # y_affine
+        circuit.extend_output(intermediate_values[1])  # y_initial
+        circuit.extend_output(intermediate_values[2])  # field
+        return circuit
+
+
+class MapToCurveG2AdjustYSign(BaseModuloCircuit):
+    def __init__(self, curve_id: int, compilation_mode: int = 0, auto_run: bool = True):
+        super().__init__(
+            name="map_to_curve_g2_adj_y",
+            curve_id=curve_id,
+            compilation_mode=compilation_mode,
+        )
+
+    def build_input(self) -> list[PyFelt]:
+        return [
+            self.field(randint(0, 1000000)),  # field
+            self.field(1),  # 0
+            self.field(randint(0, 1000000)),  # y_initial
+            self.field(1),  # 0
+        ]
+
+    def _run_circuit_inner(self, input: list[PyFelt]) -> ModuloCircuit:
+        circuit = MapToCurveG2(
+            self.name,
+            self.curve_id,
+            compilation_mode=self.compilation_mode,
+        )
+        circuit.set_consts()
+        field = circuit.write_elements(input[0:2], WriteOps.INPUT)
+        y_initial = circuit.write_elements(input[2:4], WriteOps.INPUT)
+
+        intermediate_values = circuit.adjust_y_sign(field, y_initial)
+
+        circuit.extend_output(intermediate_values[0])  # y_affine
+        circuit.extend_output([intermediate_values[1]])  # qfield
+        circuit.extend_output([intermediate_values[2]])  # qy
 
         return circuit
 

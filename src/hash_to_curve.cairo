@@ -8,16 +8,18 @@ from starkware.cairo.common.memcpy import memcpy
 from hash_to_field import HashToField
 from sha import SHA256, HashUtils
 from utils import pow2alloc128
-from definitions import G2Point
+from definitions import G2Point, bls
 from ec_ops import add_ec_points_g2
 from precompiled_circuits.map_to_curve_g2 import (
     get_MAP_TO_CURVE_G2_FIRST_STEP_circuit,
-    get_MAP_TO_CURVE_G2_FIN_QUAD_circuit,
-    get_MAP_TO_CURVE_G2_FIN_NON_QUAD_circuit,
+    get_MAP_TO_CURVE_G2_QUAD_circuit,
+    get_MAP_TO_CURVE_G2_NON_QUAD_circuit,
+    get_MAP_TO_CURVE_G2_ADJ_Y_circuit,
 )
 from precompiled_circuits.isogeny_g2 import get_ISOGENY_G2_circuit
 from precompiled_circuits.cofactor_clearing import get_G2_COFACTOR_CLEARING_circuit
 from modulo_circuit import run_modulo_circuit, ModuloCircuit
+from basic_field_ops import uint384_is_le
 
 func hash_to_curve{
     range_check_ptr,
@@ -85,24 +87,47 @@ func map_to_curve_g2{
             ids.is_quad_res = 0
     %}
 
+    // Copy initial output to input buffer
     if (is_quad_res == 0) {
-        // Non quadratic residue
-        // we want [field, gx1, div, num_x1, zeta_u2]
+        // Non quadratic case needs 32 felts
         memcpy(input + 8, output, 32);
-
-        let (circuit) = get_MAP_TO_CURVE_G2_FIN_NON_QUAD_circuit(curve_id);
-        let (output: felt*) = run_modulo_circuit(circuit, input);
-
-        return (point=[cast(output, G2Point*)]);
+        let (circuit) = get_MAP_TO_CURVE_G2_NON_QUAD_circuit(curve_id);
     } else {
-        // Quadratic residue
-        // we want [field, gx1, div, num_x1]
+        // Quadratic case needs 24 felts
         memcpy(input + 8, output, 24);
-        let (circuit) = get_MAP_TO_CURVE_G2_FIN_QUAD_circuit(curve_id);
-        let (output: felt*) = run_modulo_circuit(circuit, input);
-
-        return (point=[cast(output, G2Point*)]);
+        let (circuit) = get_MAP_TO_CURVE_G2_QUAD_circuit(curve_id);
     }
+
+    let (output: felt*) = run_modulo_circuit(circuit, input);
+
+    let (second_input: felt*) = alloc();
+    memcpy(second_input, output + 8, 16);
+
+    let x0 = UInt384(d0=output[0], d1=output[1], d2=output[2], d3=output[3]);
+
+    let x1 = UInt384(d0=output[4], d1=output[5], d2=output[6], d3=output[7]);
+
+    let (adjust_y_circuit) = get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id);
+    let (second_output: felt*) = run_modulo_circuit(adjust_y_circuit, second_input);
+
+    // Cast the output array to UInt384 array for easier access
+    let values = cast(second_output, UInt384*);
+    let y0 = values[0];
+    let y1 = values[1];
+    let qfield = values[2];
+    let qy = values[3];
+
+    let q_max = UInt384(d0=bls.PH3, d1=bls.PH2, d2=bls.PH1, d3=bls.PH0);
+
+    let (q_max_minus_y0) = uint384_is_le(qfield, q_max);
+    assert q_max_minus_y0 = 1;
+
+    let (q_max_minus_y1) = uint384_is_le(qy, q_max);
+    assert q_max_minus_y1 = 1;
+
+    let res = G2Point(x0=x0, x1=x1, y0=y0, y1=y1);
+
+    return (point=res);
 }
 
 func apply_isogeny_g2{

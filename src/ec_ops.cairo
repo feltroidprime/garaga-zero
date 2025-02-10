@@ -19,13 +19,14 @@ from basic_field_ops import (
     is_zero_mod_p,
     assert_eq_mod_p,
     sub_mod_p,
+    uint384_is_le,
 )
 
 from precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_G2_circuit,
     get_IS_ON_CURVE_G1_circuit,
     get_DERIVE_POINT_FROM_X_circuit,
-    get_DERIVE_G1_POINT_FROM_X_circuit,
+    get_DECOMPRESS_G1_POINT_circuit,
     get_SLOPE_INTERCEPT_SAME_POINT_circuit,
     get_ACC_EVAL_POINT_CHALLENGE_SIGNED_circuit,
     get_RHS_FINALIZE_ACC_circuit,
@@ -213,21 +214,30 @@ func add_ec_points_g2{
 
 func derive_g1_point_from_x{
     range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
-}(curve_id: felt, x: UInt384, s: UInt384) -> (res: G1Point) {
+}(curve_id: felt, x: UInt384, s: felt) -> (res: G1Point) {
     alloc_locals;
 
     let (b_weirstrass: UInt384) = get_b(curve_id);
-    let (circuit) = get_DERIVE_G1_POINT_FROM_X_circuit(curve_id);
+    let (circuit) = get_DECOMPRESS_G1_POINT_circuit(curve_id);
 
     let (input: UInt384*) = alloc();
     assert input[0] = b_weirstrass;
     assert input[1] = x;
-    assert input[2] = s;
 
     let (output_array: felt*) = run_modulo_circuit(circuit, cast(input, felt*));
-    let y: UInt384* = cast(output_array, UInt384*);
+    let outputs: UInt384* = cast(output_array, UInt384*);
 
-    return (res=G1Point(x, [y]));
+    let y = outputs[0];
+    let y_neg = outputs[1];
+
+    // Compare y and y_neg to determine which one to use based on s_bit
+    let (y_lt_y_neg) = uint384_is_le(y, y_neg);
+
+    if (y_lt_y_neg == s) {
+        return (res=G1Point(x, y_neg));
+    } else {
+        return (res=G1Point(x, y));
+    }
 }
 
 struct DerivePointFromXOutput {

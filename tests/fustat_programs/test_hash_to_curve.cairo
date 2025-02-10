@@ -82,10 +82,32 @@ func run_fixture_g2_inner{
     %{
         from garaga.hints.io import bigint_pack
 
-        assert bigint_pack(ids.x0, 4, 2**96) == int(fixtures[ids.index]["point"]["x0"], 16)
-        assert bigint_pack(ids.x1, 4, 2**96) == int(fixtures[ids.index]["point"]["x1"], 16)
-        assert bigint_pack(ids.y0, 4, 2**96) == int(fixtures[ids.index]["point"]["y0"], 16)
-        assert bigint_pack(ids.y1, 4, 2**96) == int(fixtures[ids.index]["point"]["y1"], 16)
+        expected_x0 = int(fixtures[ids.index]["point"]["x0"], 16)
+        expected_x1 = int(fixtures[ids.index]["point"]["x1"], 16)
+        expected_y0 = int(fixtures[ids.index]["point"]["y0"], 16)
+        expected_y1 = int(fixtures[ids.index]["point"]["y1"], 16)
+
+        received_x0 = bigint_pack(ids.x0, 4, 2**96)
+        received_x1 = bigint_pack(ids.x1, 4, 2**96)
+        received_y0 = bigint_pack(ids.y0, 4, 2**96)
+        received_y1 = bigint_pack(ids.y1, 4, 2**96)
+
+        print(f"\nExpected values:")
+        print(f"x0: {hex(expected_x0)}")
+        print(f"x1: {hex(expected_x1)}")
+        print(f"y0: {hex(expected_y0)}")
+        print(f"y1: {hex(expected_y1)}")
+
+        print(f"\nReceived values:")
+        print(f"x0: {hex(received_x0)}")
+        print(f"x1: {hex(received_x1)}")
+        print(f"y0: {hex(received_y0)}")
+        print(f"y1: {hex(received_y1)}")
+
+        assert received_x0 == expected_x0
+        assert received_x1 == expected_x1
+        assert received_y0 == expected_y0
+        assert received_y1 == expected_y1
     %}
 
     return run_fixture_g2_inner(index + 1, n_fixtures);

@@ -17,7 +17,6 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     DummyCircuit,
     EvalFunctionChallengeDuplCircuit,
     FinalizeFunctionChallengeDuplCircuit,
-    FullECIPCircuitBatched,
     InitFunctionChallengeDuplCircuit,
     IsOnCurveG1Circuit,
     IsOnCurveG1G2Circuit,
@@ -26,15 +25,16 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
 )
 from precompiled_circuits.compilable_circuits.fustat_only import (
     AddECPointsG2Circuit,
-    DeriveG1PointFromXCircuit,
+    DecompressG1PointCircuit,
     DerivePointFromXCircuit,
     FastG2CofactorClearingCircuit,
     FinalExpPart1Circuit,
     FinalExpPart2Circuit,
     FP12MulCircuit,
     IsogenyG2Circuit,
-    MapToCurveG2FinalizeNonQuadResCircuit,
-    MapToCurveG2FinalizeQuadResCircuit,
+    MapToCurveG2AdjustYSign,
+    MapToCurveG2ComputeInialCoordinatesQuadratic,
+    MapToCurveG2ComputeInitialCoordinatesNonQuadratic,
     MapToCurveG2Part1Circuit,
     MultiMillerLoop,
     MultiPairingCheck,
@@ -53,7 +53,7 @@ class CircuitID(Enum):
     IS_ON_CURVE_G1 = int.from_bytes(b"is_on_curve_g1", "big")
     IS_ON_CURVE_G2 = int.from_bytes(b"is_on_curve_g2", "big")
     DERIVE_POINT_FROM_X = int.from_bytes(b"derive_point_from_x", "big")
-    DERIVE_G1_POINT_FROM_X = int.from_bytes(b"derive_g1_point_from_x", "big")
+    DecompressG1Point = int.from_bytes(b"decompress_g1_point", "big")
     SLOPE_INTERCEPT_SAME_POINT = int.from_bytes(b"slope_intercept_same_point", "big")
     ACC_EVAL_POINT_CHALLENGE_SIGNED = int.from_bytes(b"acc_eval_point_challenge", "big")
     RHS_FINALIZE_ACC = int.from_bytes(b"rhs_finalize_acc", "big")
@@ -84,10 +84,9 @@ class CircuitID(Enum):
     EVAL_E12D = int.from_bytes(b"eval_e12d", "big")
     FULL_ECIP_BATCHED = int.from_bytes(b"full_ecip_batched", "big")
     MAP_TO_CURVE_G2_PART_1 = int.from_bytes(b"map_to_curve_g2_first_step", "big")
-    MAP_TO_CURVE_G2_FIN_QUAD = int.from_bytes(b"map_to_curve_g2_fin_quad", "big")
-    MAP_TO_CURVE_G2_FIN_NON_QUAD = int.from_bytes(
-        b"map_to_curve_g2_fin_non_quad", "big"
-    )
+    MAP_TO_CURVE_G2_INIT_QUAD = int.from_bytes(b"map_to_curve_g2_quad", "big")
+    MAP_TO_CURVE_G2_INIT_NON_QUAD = int.from_bytes(b"map_to_curve_g2_non_quad", "big")
+    MAP_TO_CURVE_G2_ADJUST_Y_SIGN = int.from_bytes(b"map_to_curve_g2_adj_y", "big")
     G2_COFACTOR_CLEARING = int.from_bytes(b"g2_cofactor_clearing", "big")
     ISOGENY_G2 = int.from_bytes(b"isogeny_g2", "big")
 
@@ -133,8 +132,8 @@ ALL_FUSTAT_CIRCUITS = {
         "params": None,
         "filename": "ec",
     },
-    CircuitID.DERIVE_G1_POINT_FROM_X: {
-        "class": DeriveG1PointFromXCircuit,
+    CircuitID.DecompressG1Point: {
+        "class": DecompressG1PointCircuit,
         "params": None,
         "filename": "ec",
     },
@@ -208,25 +207,31 @@ ALL_FUSTAT_CIRCUITS = {
         "params": None,
         "filename": "ec",
     },
-    CircuitID.FULL_ECIP_BATCHED: {
-        "class": FullECIPCircuitBatched,
-        "params": [{"n_points": k} for k in [1, 2]],
-        "filename": "ec",
-    },
+    # CircuitID.FULL_ECIP_BATCHED: {
+    #     "class": FullECIPCircuitBatched,
+    #     "params": [{"n_points": k} for k in [1, 2]],
+    #     "filename": "ec",
+    # },
     CircuitID.MAP_TO_CURVE_G2_PART_1: {
         "class": MapToCurveG2Part1Circuit,
         "params": None,
         "filename": "map_to_curve_g2",
         "curve_ids": [CurveID.BLS12_381],
     },
-    CircuitID.MAP_TO_CURVE_G2_FIN_QUAD: {
-        "class": MapToCurveG2FinalizeQuadResCircuit,
+    CircuitID.MAP_TO_CURVE_G2_INIT_QUAD: {
+        "class": MapToCurveG2ComputeInialCoordinatesQuadratic,
         "params": None,
         "filename": "map_to_curve_g2",
         "curve_ids": [CurveID.BLS12_381],
     },
-    CircuitID.MAP_TO_CURVE_G2_FIN_NON_QUAD: {
-        "class": MapToCurveG2FinalizeNonQuadResCircuit,
+    CircuitID.MAP_TO_CURVE_G2_INIT_NON_QUAD: {
+        "class": MapToCurveG2ComputeInitialCoordinatesNonQuadratic,
+        "params": None,
+        "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
+    CircuitID.MAP_TO_CURVE_G2_ADJUST_Y_SIGN: {
+        "class": MapToCurveG2AdjustYSign,
         "params": None,
         "filename": "map_to_curve_g2",
         "curve_ids": [CurveID.BLS12_381],
