@@ -59,7 +59,6 @@ func uint384_assert_le{range_check96_ptr: felt*}(a: UInt384, b: UInt384) {
     let range_check96_ptr = range_check96_ptr + 4;
     return ();
 }
-
 // Compute u512 mod p, where u512 = high * 2^256 + low
 // Each high/low limb is 32 bits big and passed in BE
 func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*}(
@@ -167,7 +166,7 @@ func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     return (x_plus_y=[cast(range_check96_ptr - 4, UInt384*)]);
 
     add_offsets:
-    // Instruction : assert 0 + 4 == 8
+    // Instruction : assert 0 + 4 == 8cla
     dw 0;  // X
     dw 4;  // Y
     dw 8;  // X+Y
@@ -346,7 +345,7 @@ func is_zero_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_p
     }
 }
 
-// Assert X == Y mod p by asserting Y - X == 0
+// Assert X == Y mod p by asserting X+0 == Y
 func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384
 ) {
@@ -372,11 +371,10 @@ func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     assert [range_check96_ptr + 11] = y.d3;
 
     // Builtin results :
-    // (- X) (offset 12)
-    // (Y - X) (offset 16)
+    // (X+0) (offset 12)
 
     assert add_mod_ptr[0] = ModBuiltin(
-        p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=2
+        p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=add_offsets_ptr, n=1
     );
     %{
         from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
@@ -384,23 +382,19 @@ func assert_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
 
         ModBuiltinRunner.fill_memory(
             memory=memory,
-            add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 2),
+            add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 1),
             mul_mod=None,
         )
     %}
-    let range_check96_ptr = range_check96_ptr + 16;
-    let add_mod_ptr = add_mod_ptr + 2 * ModBuiltin.SIZE;
+    let range_check96_ptr = range_check96_ptr + 12;
+    let add_mod_ptr = add_mod_ptr + ModBuiltin.SIZE;
     return ();
 
-    // Compute 0 - X (X + (-X) = 0)
+    // Assert X + 0 == Y
     add_offsets:
-    dw 4;
-    dw 12;  // - X
-    dw 0;
-    // Compute - X + Y and assert == 0
-    dw 12;  // - X
+    dw 4;  // X
+    dw 0;  // 0
     dw 8;  // Y
-    dw 0;
 }
 
 // assert X != Y mod p by asserting (X-Y) != 0
