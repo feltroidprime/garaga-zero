@@ -125,8 +125,6 @@ func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr:
     dw 16;  // [Low + High * Shift]
 }
 
-
-
 // Compute X + Y mod p.
 func add_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(
     x: UInt384, y: UInt384, p: UInt384

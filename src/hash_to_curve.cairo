@@ -14,7 +14,7 @@ from precompiled_circuits.map_to_curve_g2 import (
     get_MAP_TO_CURVE_G2_FIRST_STEP_circuit,
     get_MAP_TO_CURVE_G2_QUAD_circuit,
     get_MAP_TO_CURVE_G2_NON_QUAD_circuit,
-    get_MAP_TO_CURVE_G2_ADJ_Y_circuit
+    get_MAP_TO_CURVE_G2_ADJ_Y_circuit,
 )
 from precompiled_circuits.isogeny_g2 import get_ISOGENY_G2_circuit
 from precompiled_circuits.cofactor_clearing import get_G2_COFACTOR_CLEARING_circuit
@@ -34,7 +34,6 @@ func hash_to_curve{
     // First we hash the message to field elements
     let (chunks) = HashUtils.chunk_uint256(msg);
     let (res) = HashToField.hash_to_field(chunks, 32, 2, 2);
-
 
     // The use simple swu to map the field elements to the curve
     let (p1) = map_to_curve_g2(res[0], curve_id);
@@ -104,19 +103,9 @@ func map_to_curve_g2{
     let (second_input: felt*) = alloc();
     memcpy(second_input, output + 8, 16);
 
-    let x0 = UInt384(
-        d0 = output[0],
-        d1 = output[1],
-        d2 = output[2],
-        d3 = output[3],
-    );
+    let x0 = UInt384(d0=output[0], d1=output[1], d2=output[2], d3=output[3]);
 
-    let x1 = UInt384(
-        d0 = output[4],
-        d1 = output[5],
-        d2 = output[6],
-        d3 = output[7],
-    );
+    let x1 = UInt384(d0=output[4], d1=output[5], d2=output[6], d3=output[7]);
 
     let (adjust_y_circuit) = get_MAP_TO_CURVE_G2_ADJ_Y_circuit(curve_id);
     let (second_output: felt*) = run_modulo_circuit(adjust_y_circuit, second_input);
@@ -128,12 +117,7 @@ func map_to_curve_g2{
     let qfield = values[2];
     let qy = values[3];
 
-    let q_max = UInt384(
-        d0 = bls.PH3,
-        d1 = bls.PH2,
-        d2 = bls.PH1,
-        d3 = bls.PH0,
-    );
+    let q_max = UInt384(d0=bls.PH3, d1=bls.PH2, d2=bls.PH1, d3=bls.PH0);
 
     let (q_max_minus_y0) = uint384_is_le(qfield, q_max);
     assert q_max_minus_y0 = 1;
@@ -141,12 +125,7 @@ func map_to_curve_g2{
     let (q_max_minus_y1) = uint384_is_le(qy, q_max);
     assert q_max_minus_y1 = 1;
 
-    let res = G2Point(
-        x0 = x0,
-        x1 = x1,
-        y0 = y0,
-        y1 = y1,
-    );
+    let res = G2Point(x0=x0, x1=x1, y0=y0, y1=y1);
 
     return (point=res);
 }
