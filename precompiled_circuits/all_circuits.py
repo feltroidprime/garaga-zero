@@ -17,7 +17,6 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     DummyCircuit,
     EvalFunctionChallengeDuplCircuit,
     FinalizeFunctionChallengeDuplCircuit,
-    FullECIPCircuitBatched,
     InitFunctionChallengeDuplCircuit,
     IsOnCurveG1Circuit,
     IsOnCurveG1G2Circuit,
@@ -25,10 +24,18 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     SlopeInterceptSamePointCircuit,
 )
 from precompiled_circuits.compilable_circuits.fustat_only import (
+    AddECPointsG2Circuit,
+    DecompressG1PointCircuit,
     DerivePointFromXCircuit,
+    FastG2CofactorClearingCircuit,
     FinalExpPart1Circuit,
     FinalExpPart2Circuit,
     FP12MulCircuit,
+    IsogenyG2Circuit,
+    MapToCurveG2AdjustYSign,
+    MapToCurveG2ComputeInialCoordinatesQuadratic,
+    MapToCurveG2ComputeInitialCoordinatesNonQuadratic,
+    MapToCurveG2Part1Circuit,
     MultiMillerLoop,
     MultiPairingCheck,
 )
@@ -46,6 +53,7 @@ class CircuitID(Enum):
     IS_ON_CURVE_G1 = int.from_bytes(b"is_on_curve_g1", "big")
     IS_ON_CURVE_G2 = int.from_bytes(b"is_on_curve_g2", "big")
     DERIVE_POINT_FROM_X = int.from_bytes(b"derive_point_from_x", "big")
+    DecompressG1Point = int.from_bytes(b"decompress_g1_point", "big")
     SLOPE_INTERCEPT_SAME_POINT = int.from_bytes(b"slope_intercept_same_point", "big")
     ACC_EVAL_POINT_CHALLENGE_SIGNED = int.from_bytes(b"acc_eval_point_challenge", "big")
     RHS_FINALIZE_ACC = int.from_bytes(b"rhs_finalize_acc", "big")
@@ -60,6 +68,7 @@ class CircuitID(Enum):
         b"finalize_function_challenge_dupl", "big"
     )
     ADD_EC_POINT = int.from_bytes(b"add_ec_point", "big")
+    ADD_EC_POINTS_G2 = int.from_bytes(b"add_ec_points_g2", "big")
     DOUBLE_EC_POINT = int.from_bytes(b"double_ec_point", "big")
     MP_CHECK_BIT0_LOOP = int.from_bytes(b"mp_check_bit0_loop", "big")
     MP_CHECK_BIT00_LOOP = int.from_bytes(b"mp_check_bit00_loop", "big")
@@ -74,6 +83,12 @@ class CircuitID(Enum):
     FP12_MUL_ASSERT_ONE = int.from_bytes(b"fp12_mul_assert_one", "big")
     EVAL_E12D = int.from_bytes(b"eval_e12d", "big")
     FULL_ECIP_BATCHED = int.from_bytes(b"full_ecip_batched", "big")
+    MAP_TO_CURVE_G2_PART_1 = int.from_bytes(b"map_to_curve_g2_first_step", "big")
+    MAP_TO_CURVE_G2_INIT_QUAD = int.from_bytes(b"map_to_curve_g2_quad", "big")
+    MAP_TO_CURVE_G2_INIT_NON_QUAD = int.from_bytes(b"map_to_curve_g2_non_quad", "big")
+    MAP_TO_CURVE_G2_ADJUST_Y_SIGN = int.from_bytes(b"map_to_curve_g2_adj_y", "big")
+    G2_COFACTOR_CLEARING = int.from_bytes(b"g2_cofactor_clearing", "big")
+    ISOGENY_G2 = int.from_bytes(b"isogeny_g2", "big")
 
 
 def find_best_circuit_id_from_int(circuit_id: int) -> CircuitID:
@@ -114,6 +129,11 @@ ALL_FUSTAT_CIRCUITS = {
     },
     CircuitID.DERIVE_POINT_FROM_X: {
         "class": DerivePointFromXCircuit,
+        "params": None,
+        "filename": "ec",
+    },
+    CircuitID.DecompressG1Point: {
+        "class": DecompressG1PointCircuit,
         "params": None,
         "filename": "ec",
     },
@@ -187,10 +207,51 @@ ALL_FUSTAT_CIRCUITS = {
         "params": None,
         "filename": "ec",
     },
-    CircuitID.FULL_ECIP_BATCHED: {
-        "class": FullECIPCircuitBatched,
-        "params": [{"n_points": k} for k in [1, 2]],
+    # CircuitID.FULL_ECIP_BATCHED: {
+    #     "class": FullECIPCircuitBatched,
+    #     "params": [{"n_points": k} for k in [1, 2]],
+    #     "filename": "ec",
+    # },
+    CircuitID.MAP_TO_CURVE_G2_PART_1: {
+        "class": MapToCurveG2Part1Circuit,
+        "params": None,
+        "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
+    CircuitID.MAP_TO_CURVE_G2_INIT_QUAD: {
+        "class": MapToCurveG2ComputeInialCoordinatesQuadratic,
+        "params": None,
+        "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
+    CircuitID.MAP_TO_CURVE_G2_INIT_NON_QUAD: {
+        "class": MapToCurveG2ComputeInitialCoordinatesNonQuadratic,
+        "params": None,
+        "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
+    CircuitID.MAP_TO_CURVE_G2_ADJUST_Y_SIGN: {
+        "class": MapToCurveG2AdjustYSign,
+        "params": None,
+        "filename": "map_to_curve_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
+    CircuitID.ISOGENY_G2: {
+        "class": IsogenyG2Circuit,
+        "params": None,
+        "filename": "isogeny_g2",
+        "curve_ids": [CurveID.BLS12_381],
+    },
+    CircuitID.ADD_EC_POINTS_G2: {
+        "class": AddECPointsG2Circuit,
+        "params": None,
         "filename": "ec",
+    },
+    CircuitID.G2_COFACTOR_CLEARING: {
+        "class": FastG2CofactorClearingCircuit,
+        "params": None,
+        "filename": "cofactor_clearing",
+        "curve_ids": [CurveID.BLS12_381],
     },
 }
 
@@ -342,7 +403,7 @@ def main(
         params = circuit_info["params"]
         print(f"id: {circuit_id}, params: {params}")
         temp_instance = circuit_class(
-            curve_id=CurveID.BN254.value,
+            curve_id=circuit_info.get("curve_ids", [CurveID.BN254])[0].value,
             compilation_mode=compilation_mode,
             **(params[0] if params else {}),
         )
@@ -353,7 +414,9 @@ def main(
             if filename not in compiled_files:
                 compiled_files[filename] = {"circuits": set(), "selectors": set()}
 
-            for curve_id in [CurveID.BN254, CurveID.BLS12_381]:
+            for curve_id in circuit_info.get(
+                "curve_ids", [CurveID.BN254, CurveID.BLS12_381]
+            ):
                 circuits, selectors = compile_circuit(
                     curve_id, circuit_class, circuit_id, params, compilation_mode
                 )
@@ -362,7 +425,9 @@ def main(
 
         else:
             # Handle non-generic circuits (separate files for each)
-            for curve_id in [CurveID.BN254, CurveID.BLS12_381]:
+            for curve_id in circuit_info.get(
+                "curve_ids", [CurveID.BN254, CurveID.BLS12_381]
+            ):
                 if params is None:
                     params = [None]
                 for param in params:
@@ -385,8 +450,22 @@ def main(
                     compiled_files[filename]["circuits"].update(circuits)
                     # compiled_files[filename]["selectors"].update(selectors)
 
-    # Write compiled circuits and selectors to files
+    # Before writing files, sort and deduplicate the circuits and selectors
     for filename, content in compiled_files.items():
+        # Remove duplicates while preserving list type
+        content["circuits"] = list(dict.fromkeys(content["circuits"]))
+        content["selectors"] = list(dict.fromkeys(content["selectors"]))
+
+        # Sort based on function names
+        content["circuits"].sort(
+            key=lambda x: (
+                re.search(r"func\s+(\w+)", x).group(1)
+                if re.search(r"func\s+(\w+)", x)
+                else ""
+            )
+        )
+        content["selectors"].sort()
+
         full_path = f"{PRECOMPILED_CIRCUITS_DIR}{filename}"
         print(f"Writing {full_path}...")
         with open(full_path, "w") as file:
@@ -394,15 +473,14 @@ def main(
 
             # Add comment with available function names for generic circuits
             if any("get_" in selector for selector in content["selectors"]):
-                function_names = set()
+                function_names = []
                 for circuit in content["circuits"]:
-                    # Extract function name from the circuit code
                     match = re.search(r"func\s+(\w+)", circuit)
                     if match:
-                        function_names.add(match.group(1))
+                        function_names.append(match.group(1))
 
                 file.write("// Available functions:\n")
-                for name in sorted(function_names):
+                for name in sorted(set(function_names)):
                     file.write(f"// - {name}\n")
                 file.write("\n")
 
