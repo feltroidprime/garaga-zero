@@ -11,7 +11,7 @@ from definitions import bn, bls
 // - get_ACC_FUNCTION_CHALLENGE_DUPL_circuit
 // - get_ADD_EC_POINTS_G2_circuit
 // - get_ADD_EC_POINT_circuit
-// - get_DERIVE_G1_POINT_FROM_X_circuit
+// - get_DECOMPRESS_G1_POINT_circuit
 // - get_DERIVE_POINT_FROM_X_circuit
 // - get_DOUBLE_EC_POINT_circuit
 // - get_EVAL_FN_CHALLENGE_DUPL_1P_circuit
@@ -494,7 +494,7 @@ func get_ADD_EC_POINT_circuit(curve_id: felt) -> (circuit: ModuloCircuit*) {
     dw 48;
 }
 
-func get_DERIVE_G1_POINT_FROM_X_circuit(curve_id: felt) -> (circuit: ModuloCircuit*) {
+func get_DECOMPRESS_G1_POINT_circuit(curve_id: felt) -> (circuit: ModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();
     let (constants_ptr: felt*) = get_label_location(constants_ptr_loc);
@@ -509,7 +509,7 @@ func get_DERIVE_G1_POINT_FROM_X_circuit(curve_id: felt) -> (circuit: ModuloCircu
     let add_mod_n = 2;
     let mul_mod_n = 3;
     let n_assert_eq = 1;
-    let name = 'derive_g1_point_from_x';
+    let name = 'decompress_g1_point';
     let curve_id = curve_id;
     local circuit: ModuloCircuit = ModuloCircuit(
         constants_ptr,

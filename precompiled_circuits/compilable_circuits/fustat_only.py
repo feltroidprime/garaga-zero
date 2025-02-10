@@ -62,7 +62,7 @@ class DecompressG1PointCircuit(BaseModuloCircuit):
         self, curve_id: int, auto_run: bool = True, compilation_mode: int = 0
     ) -> None:
         super().__init__(
-            name="derive_g1_point_from_x",
+            name="decompress_g1_point",
             curve_id=curve_id,
             auto_run=auto_run,
             compilation_mode=compilation_mode,
@@ -79,9 +79,9 @@ class DecompressG1PointCircuit(BaseModuloCircuit):
             self.name, self.curve_id, compilation_mode=self.compilation_mode
         )
         b, x = circuit.write_elements(input[0:2], WriteOps.INPUT)
-        y0, y1 = circuit.derive_y_from_x(b, x)
+        y, y_neg = circuit.derive_y_from_x(b, x)
 
-        circuit.extend_output([y0, y1])
+        circuit.extend_output([y, y_neg])
 
         return circuit
 
