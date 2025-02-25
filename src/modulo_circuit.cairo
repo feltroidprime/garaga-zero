@@ -67,23 +67,9 @@ func run_modulo_circuit{
     );  // write(Input)
 
     %{
-        from precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
-        from garaga.hints.io import pack_bigint_ptr, fill_felt_ptr, flatten, bigint_split
-        from garaga.definitions import CURVES, PyFelt
-        p = CURVES[ids.circuit.curve_id].p
-        circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
-        # Convert the int value back to a string and print it
-        circuit_name = ids.circuit.name.to_bytes((ids.circuit.name.bit_length() + 7) // 8, 'big').decode()
-        #print(f"circuit.name = {circuit_name}")
-        circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
-        # print(f"best_match = {circuit_id.name}")
-        MOD_CIRCUIT = ALL_FUSTAT_CIRCUITS[circuit_id]['class'](ids.circuit.curve_id, auto_run=False)
-        MOD_CIRCUIT = MOD_CIRCUIT.run_circuit(circuit_input)
-
-        witnesses = flatten([bigint_split(x.value, ids.N_LIMBS, ids.BASE) for x in MOD_CIRCUIT.witnesses])
-
+        from hints.modulo_circuit import run_modulo_circuit_hints
+        witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
         fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)
-        #MOD_CIRCUIT.print_value_segment()
     %}
 
     run_mod_p_circuit(
