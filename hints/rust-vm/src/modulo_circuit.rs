@@ -12,7 +12,7 @@ use cairo_vm::{
 };
 use pyo3::prelude::*;
 
-pub const RUN_MODULO_CIRCUIT: &str = r#"from hints.modulo_circuit import run_modulo_circuit_hints
+pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from hints.modulo_circuit import run_modulo_circuit_hints
 witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
 fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)"#;
 

@@ -98,8 +98,8 @@ func u512_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr:
     assert mul_mod_ptr[0] = ModBuiltin(
         p=p, values_ptr=cast(range_check96_ptr, UInt384*), offsets_ptr=mul_offsets_ptr, n=1
     );
-    local add_mod_n = 1;
-    local mul_mod_n = 1;
+    let add_mod_n = 1;
+    let mul_mod_n = 1;
     %{
         from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
         assert builtin_runners["add_mod_builtin"].instance_def.batch_size == 1
