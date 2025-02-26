@@ -14,15 +14,17 @@ func uint384_is_le{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*}(a: UInt38
     res: felt
 ) {
     alloc_locals;
-    local flag;
     %{
         from garaga.hints.io import bigint_pack
         a = bigint_pack(ids.a, 4, 2**96)
         b = bigint_pack(ids.b, 4, 2**96)
-        ids.flag = int(a <= b)
+        memory[ap] = int(a <= b)
     %}
 
-    if (flag != 0) {
+    let is_le = [ap];
+    ap += 1;
+
+    if (is_le != 0) {
         // a <= b
         uint384_assert_le(a, b);
         return (res=1);
@@ -335,8 +337,13 @@ func is_zero_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_p
         from garaga.hints.io import bigint_pack
         x = bigint_pack(ids.x, 4, 2**96)
         p = bigint_pack(ids.p, 4, 2**96)
+        memory[ap] = int(x % p == 0)
     %}
-    if (nondet %{ x % p == 0 %} != 0) {
+
+    let is_zero = [ap];
+    ap += 1;
+
+    if (is_zero != 0) {
         assert_zero_mod_P(x, p);
         return (res=1);
     } else {
@@ -643,8 +650,13 @@ func is_opposite_mod_p{
         x = bigint_pack(ids.x, 4, 2**96)
         y = bigint_pack(ids.y, 4, 2**96)
         p = bigint_pack(ids.p, 4, 2**96)
+        memory[ap] = int(x % p == -y % p)
     %}
-    if (nondet %{ x % p == -y % p %} != 0) {
+
+    let is_opposite = [ap];
+    ap += 1;
+
+    if (is_opposite != 0) {
         assert_opposite_mod_p(x, y, p);
         return (res=1);
     } else {
