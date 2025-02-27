@@ -13,6 +13,7 @@ fn main() -> Result<(), Error> {
     // Init CairoRunConfig
     let cairo_run_config = cairo_run::CairoRunConfig {
         allow_missing_builtins: Some(true),
+        layout: LayoutName::all_cairo,
         ..Default::default()
     };
 
