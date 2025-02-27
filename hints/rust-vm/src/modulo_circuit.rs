@@ -4,15 +4,14 @@ use super::types::{CairoType, ModuloCircuit, UInt384};
 use cairo_vm::{
     Felt252,
     hint_processor::builtin_hint_processor::{
-        builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::get_ptr_from_var_name,
+        builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name,
     },
     types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use pyo3::prelude::*;
 
-pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from hints.modulo_circuit import run_modulo_circuit_hints
+pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from hints.python_wrapper.modulo_circuit import run_modulo_circuit_hints
 witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
 fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)"#;
 
@@ -53,6 +52,33 @@ pub fn run_modulo_circuit(
     Ok(())
 }
 
+/// Adds potential module paths to Python's sys.path to ensure imports work
+fn add_module_paths_to_python(py: Python) -> PyResult<()> {
+    py.run(
+        r#"
+import sys, os
+import site
+
+# Try to find the module in various locations
+paths_to_check = [
+    # Current working directory
+    os.getcwd(),
+    # Up three directories (for direct development)
+    os.path.abspath(os.path.join(os.getcwd(), '../../..')),
+    # Site packages (for installed packages)
+    *site.getsitepackages()
+]
+
+# Add all potential paths to sys.path
+for path in paths_to_check:
+    if path not in sys.path and os.path.exists(path):
+        sys.path.insert(0, path)
+"#,
+        None,
+        None,
+    )
+}
+
 pub fn compute_mod_circuit(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
@@ -78,6 +104,17 @@ pub fn compute_mod_circuit(
     let witness_target_ptr = (range_check_ptr + move_amt).unwrap();
 
     Python::with_gil(|py| {
+        // Try to import the module directly first
+        let import_result = py.import("hints.python_wrapper.modulo_circuit");
+
+        if import_result.is_err() {
+            add_module_paths_to_python(py)?;
+        }
+
+        // Now try the import again
+        let all_circuits = py.import("hints.python_wrapper.modulo_circuit")?;
+        let run_modulo_circuit_hints = all_circuits.getattr("run_modulo_circuit_hints")?;
+
         let py_input = circuit_input
             .iter()
             .map(|uint384| -> PyResult<PyObject> {
@@ -93,8 +130,6 @@ pub fn compute_mod_circuit(
             None,
             None,
         )?;
-        let all_circuits = py.import("hints.modulo_circuit")?;
-        let run_modulo_circuit_hints = all_circuits.getattr("run_modulo_circuit_hints")?;
         let witnesses =
             run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
         println!("got witnesses: {:?}", witnesses);
