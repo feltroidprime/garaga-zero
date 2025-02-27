@@ -24,8 +24,8 @@ func main{
 
     with sha256_ptr, pow2_array {
         let (res) = hash_to_curve(1, input);
+        SHA256.finalize(sha256_ptr_start, sha256_ptr);
     }
 
-    SHA256.finalize(sha256_ptr_start, sha256_ptr);
     return ();
 }

@@ -1,25 +1,17 @@
+use std::{any::Any, collections::HashMap};
+
 use cairo_vm::{
+    Felt252,
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
         hint_processor_definition::{HintExtension, HintProcessorLogic},
     },
     types::exec_scope::ExecutionScopes,
-    vm::{
-        errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker,
-        vm_core::VirtualMachine,
-    },
-    Felt252,
+    vm::{errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker, vm_core::VirtualMachine},
 };
-use std::{any::Any, collections::HashMap};
-
 use garaga_zero_hints::*;
 
-pub type HintImpl = fn(
-    &mut VirtualMachine,
-    &mut ExecutionScopes,
-    &HintProcessorData,
-    &HashMap<String, Felt252>,
-) -> Result<(), HintError>;
+pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
 pub struct CustomHintProcessor {
     hints: HashMap<String, HintImpl>,
@@ -51,8 +43,15 @@ impl CustomHintProcessor {
         hints.insert(basic_field_ops::HINT_ADD_MOD_CIRCUIT.into(), basic_field_ops::hint_add_mod_circuit);
         hints.insert(basic_field_ops::HINT_NOT_ZERO_MOD_P.into(), basic_field_ops::hint_not_zero_mod_p);
         hints.insert(basic_field_ops::HINT_IS_ZERO_MOD_P.into(), basic_field_ops::hint_is_zero_mod_p);
-        hints.insert(basic_field_ops::HINT_ASSERT_NEQ_MOD_P.into(), basic_field_ops::hint_assert_neq_mod_p);
-        hints.insert(basic_field_ops::HINT_IS_OPPOSITE_MOD_P.into(), basic_field_ops::hint_is_opposite_mod_p);
+        hints.insert(
+            basic_field_ops::HINT_ASSERT_NEQ_MOD_P.into(),
+            basic_field_ops::hint_assert_neq_mod_p,
+        );
+        hints.insert(
+            basic_field_ops::HINT_IS_OPPOSITE_MOD_P.into(),
+            basic_field_ops::hint_is_opposite_mod_p,
+        );
+        hints.insert(hash_to_curve::HINT_MAP_TO_CURVE_G2.into(), hash_to_curve::hint_map_to_curve_g2);
 
         hints
     }
@@ -82,12 +81,12 @@ impl HintProcessorLogic for CustomHintProcessor {
             println!("hint_code: {}", hint_code);
             // First try our custom hints
             if let Some(hint_impl) = self.hints.get(hint_code) {
-                return hint_impl(vm, exec_scopes, hpd, constants)
-                    .map(|_| HintExtension::default());
+                return hint_impl(vm, exec_scopes, hpd, constants).map(|_| HintExtension::default());
             }
 
             // If not found, try the builtin hint processor
-            return self.builtin_hint_proc
+            return self
+                .builtin_hint_proc
                 .execute_hint(vm, exec_scopes, hint_data, constants)
                 .map(|_| HintExtension::default());
         }

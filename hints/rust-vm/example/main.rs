@@ -3,7 +3,7 @@ pub mod hint_processor;
 
 use cairo_vm::{
     cairo_run::{self, cairo_run_program},
-    types::{layout::CairoLayoutParams, layout_name::LayoutName, program::Program},
+    types::{layout_name::LayoutName, program::Program},
 };
 use error::Error;
 use hint_processor::CustomHintProcessor;

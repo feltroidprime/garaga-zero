@@ -1,15 +1,14 @@
 use std::collections::HashMap;
 
-use super::types::{CairoType, ModuloCircuit, UInt384};
 use cairo_vm::{
     Felt252,
-    hint_processor::builtin_hint_processor::{
-        builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name,
-    },
+    hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name},
     types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use pyo3::prelude::*;
+
+use super::types::{CairoType, ModuloCircuit, UInt384};
 
 pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from hints.python_wrapper.modulo_circuit import run_modulo_circuit_hints
 witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
@@ -22,12 +21,7 @@ fn bigint_pack_ptr(vm: &VirtualMachine, ptr: Relocatable) -> Result<UInt384, Hin
 
 /// Packs multiple groups of limbs into a vector of values
 /// Each group consists of n_limbs consecutive values that are packed using bigint_pack_ptr
-fn pack_bigint_ptr_vec(
-    vm: &VirtualMachine,
-    ptr: Relocatable,
-    n_limbs: u32,
-    n_elements: usize,
-) -> Result<Vec<UInt384>, HintError> {
+fn pack_bigint_ptr_vec(vm: &VirtualMachine, ptr: Relocatable, n_limbs: u32, n_elements: usize) -> Result<Vec<UInt384>, HintError> {
     let mut values = Vec::with_capacity(n_elements);
 
     for i in 0..n_elements {
@@ -85,18 +79,10 @@ pub fn compute_mod_circuit(
     hint_data: &HintProcessorData,
     constants: &HashMap<String, Felt252>,
 ) -> Result<(), PyErr> {
-    let (circuit_input, circuit_id, curve_id, n_limbs, base) =
-        perpare_python_inputs(vm, _exec_scopes, hint_data, constants);
-    let circuit_address =
-        get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+    let (circuit_input, circuit_id, curve_id, n_limbs, base) = perpare_python_inputs(vm, _exec_scopes, hint_data, constants);
+    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
     let circuit = ModuloCircuit::from_memory(vm, circuit_address).unwrap();
-    let range_check_ptr = get_ptr_from_var_name(
-        "range_check96_ptr",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )
-    .unwrap();
+    let range_check_ptr = get_ptr_from_var_name("range_check96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
 
     let move_amt: usize = (circuit.constants_ptr_len * Felt252::from(n_limbs) + circuit.input_len)
         .try_into()
@@ -125,13 +111,8 @@ pub fn compute_mod_circuit(
             })
             .collect::<PyResult<Vec<_>>>()?;
 
-        let py_circuit_id = py.eval(
-            &format!("int.from_bytes({:?}, 'big')", circuit_id),
-            None,
-            None,
-        )?;
-        let witnesses =
-            run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
+        let py_circuit_id = py.eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)?;
+        let witnesses = run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
         println!("got witnesses: {:?}", witnesses);
 
         for (i, witness) in witnesses.iter()?.enumerate() {
@@ -150,22 +131,14 @@ fn perpare_python_inputs(
     hint_data: &HintProcessorData,
     constants: &HashMap<String, Felt252>,
 ) -> (Vec<UInt384>, Vec<u8>, u64, u32, u128) {
-    let input_ptr =
-        get_ptr_from_var_name("input", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+    let input_ptr = get_ptr_from_var_name("input", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
     let n_limbs: u32 = constants["definitions.N_LIMBS"].try_into().unwrap();
-    let circuit_address =
-        get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
     let circuit = ModuloCircuit::from_memory(vm, circuit_address).unwrap();
     let input_len: u32 = circuit.input_len.try_into().unwrap();
     let base: u128 = constants["definitions.BASE"].try_into().unwrap();
 
-    let circuit_input = pack_bigint_ptr_vec(
-        vm,
-        input_ptr,
-        n_limbs,
-        input_len as usize / n_limbs as usize,
-    )
-    .unwrap();
+    let circuit_input = pack_bigint_ptr_vec(vm, input_ptr, n_limbs, input_len as usize / n_limbs as usize).unwrap();
     let circuit_id = circuit.name.to_bytes_be().to_vec();
     let curve_id: u64 = circuit.curve_id.try_into().unwrap();
 

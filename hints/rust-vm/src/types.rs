@@ -46,12 +46,7 @@ impl UInt384 {
         let d2: BigUint = (&self.0 >> 192) & &mask;
         let d3: BigUint = (&self.0 >> 288) & &mask;
 
-        [
-            d0.to_bytes_be(),
-            d1.to_bytes_be(),
-            d2.to_bytes_be(),
-            d3.to_bytes_be(),
-        ]
+        [d0.to_bytes_be(), d1.to_bytes_be(), d2.to_bytes_be(), d3.to_bytes_be()]
     }
 }
 
@@ -65,11 +60,7 @@ impl CairoType for UInt384 {
         Ok(Self(bigint))
     }
 
-    fn to_memory(
-        &self,
-        vm: &mut VirtualMachine,
-        address: Relocatable,
-    ) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         let limbs = self.to_limbs();
 
         vm.insert_value((address + 0)?, Felt252::from_bytes_be_slice(&limbs[0]))?;
@@ -123,26 +114,16 @@ impl ModuloCircuit {
         })
     }
 
-    pub fn to_memory(
-        &self,
-        vm: &mut VirtualMachine,
-        address: Relocatable,
-    ) -> Result<Relocatable, MemoryError> {
+    pub fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
         vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
-        vm.insert_value(
-            (address + 3)?,
-            MaybeRelocatable::from(self.output_offsets_ptr),
-        )?;
+        vm.insert_value((address + 3)?, MaybeRelocatable::from(self.output_offsets_ptr))?;
         vm.insert_value((address + 4)?, self.constants_ptr_len)?;
         vm.insert_value((address + 5)?, self.input_len)?;
         vm.insert_value((address + 6)?, self.witnesses_len)?;
         vm.insert_value((address + 7)?, self.output_len)?;
-        vm.insert_value(
-            (address + 8)?,
-            MaybeRelocatable::from(self.continuous_output),
-        )?;
+        vm.insert_value((address + 8)?, MaybeRelocatable::from(self.continuous_output))?;
         vm.insert_value((address + 9)?, self.add_mod_n)?;
         vm.insert_value((address + 10)?, self.mul_mod_n)?;
         vm.insert_value((address + 11)?, self.n_assert_eq)?;
@@ -158,10 +139,6 @@ impl ModuloCircuit {
 
 pub trait CairoType: Sized {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError>;
-    fn to_memory(
-        &self,
-        vm: &mut VirtualMachine,
-        address: Relocatable,
-    ) -> Result<Relocatable, MemoryError>;
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError>;
     fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError>;
 }

@@ -1,19 +1,17 @@
 use std::collections::HashMap;
 
-use super::types::{CairoType, UInt384};
 use cairo_vm::{
     Felt252,
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{
-            get_ptr_from_var_name,
-            get_relocatable_from_var_name, insert_value_into_ap,
-        },
+        hint_utils::{get_ptr_from_var_name, get_relocatable_from_var_name, insert_value_into_ap},
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use num_bigint::BigUint;
+
+use super::types::{CairoType, UInt384};
 
 pub const HINT_UINT384_IS_LE: &str = r#"from garaga.hints.io import bigint_pack
 a = bigint_pack(ids.a, 4, 2**96)
@@ -26,10 +24,8 @@ pub fn hint_uint384_is_le(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let a_ptr = get_relocatable_from_var_name("a", vm, &hint_data.ids_data, &hint_data.ap_tracking)
-        .unwrap();
-    let b_ptr = get_relocatable_from_var_name("b", vm, &hint_data.ids_data, &hint_data.ap_tracking)
-        .unwrap();
+    let a_ptr = get_relocatable_from_var_name("a", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+    let b_ptr = get_relocatable_from_var_name("b", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
 
     let a = UInt384::from_memory(vm, a_ptr).unwrap();
     let b = UInt384::from_memory(vm, b_ptr).unwrap();
@@ -53,12 +49,7 @@ pub fn hint_add_mod_circuit(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let add_mod_ptr = get_ptr_from_var_name(
-        "add_mod_ptr",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let add_mod_ptr = get_ptr_from_var_name("add_mod_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     vm.mod_builtin_fill_memory(Some((add_mod_ptr, 1)), None, Some(1))
         .map_err(HintError::Internal)
@@ -80,18 +71,15 @@ pub fn hint_not_zero_mod_p(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let x_ptr =
-        get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let p_ptr =
-        get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let x_ptr = get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let p_ptr = get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let x = UInt384::from_memory(vm, x_ptr).unwrap();
     let p = UInt384::from_memory(vm, p_ptr).unwrap();
 
     // Calculate modular inverse of x with respect to p
     let x_inv = UInt384(x.0.modinv(&p.0).unwrap());
-    let x_inv_addr =
-        get_relocatable_from_var_name("x_inv_d0", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let x_inv_addr = get_relocatable_from_var_name("x_inv_d0", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let _ = x_inv.to_memory(vm, x_inv_addr);
 
@@ -109,10 +97,8 @@ pub fn hint_is_zero_mod_p(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let x_ptr =
-        get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let p_ptr =
-        get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let x_ptr = get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let p_ptr = get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let x = UInt384::from_memory(vm, x_ptr).unwrap();
     let p = UInt384::from_memory(vm, p_ptr).unwrap();
@@ -139,12 +125,9 @@ pub fn hint_assert_neq_mod_p(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let x_ptr =
-        get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let y_ptr =
-        get_relocatable_from_var_name("y", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let p_ptr =
-        get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let x_ptr = get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let y_ptr = get_relocatable_from_var_name("y", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let p_ptr = get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let x = UInt384::from_memory(vm, x_ptr).unwrap();
     let y = UInt384::from_memory(vm, y_ptr).unwrap();
@@ -153,12 +136,7 @@ pub fn hint_assert_neq_mod_p(
     let diff = (x.0 - y.0) % &p.0;
     let diff_inv = UInt384(diff.modinv(&p.0).unwrap());
 
-    let diff_inv_addr = get_relocatable_from_var_name(
-        "diff_inv_d0",
-        vm,
-        &hint_data.ids_data,
-        &hint_data.ap_tracking,
-    )?;
+    let diff_inv_addr = get_relocatable_from_var_name("diff_inv_d0", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let _ = diff_inv.to_memory(vm, diff_inv_addr);
 
@@ -177,12 +155,9 @@ pub fn hint_is_opposite_mod_p(
     hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    let x_ptr =
-        get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let y_ptr =
-        get_relocatable_from_var_name("y", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
-    let p_ptr =
-        get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let x_ptr = get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let y_ptr = get_relocatable_from_var_name("y", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let p_ptr = get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     let x = UInt384::from_memory(vm, x_ptr).unwrap();
     let y = UInt384::from_memory(vm, y_ptr).unwrap();

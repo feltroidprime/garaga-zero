@@ -19,6 +19,8 @@ num-traits = "0.2.19"
 serde = "1.0.215"
 serde_json = "1.0.132"
 thiserror = "1.0"
+ark-ff = "0.4.0"
+ark-bls12-381 = "0.4.0"
 
 [package.metadata.pyo3-build-config]
 python-path = "venv/bin/python"
