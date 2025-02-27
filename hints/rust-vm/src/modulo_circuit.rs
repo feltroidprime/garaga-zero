@@ -10,8 +10,11 @@ use pyo3::prelude::*;
 
 use super::types::{CairoType, ModuloCircuit, UInt384};
 
-pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from hints.python_wrapper.modulo_circuit import run_modulo_circuit_hints
-witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
+pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from garaga.hints.io import pack_bigint_ptr, fill_felt_ptr
+from hints.python_wrapper.modulo_circuit import run_modulo_circuit_hints
+inputs = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
+
+witnesses = run_modulo_circuit_hints(inputs, ids.N_LIMBS, ids.BASE, ids.circuit.name, ids.circuit.curve_id)
 fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)"#;
 
 /// Packs multiple limbs into a single value using the formula: sum(limb[i] * base^i)
@@ -39,7 +42,6 @@ pub fn run_modulo_circuit(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!("Running modulo circuit");
 
     compute_mod_circuit(vm, exec_scopes, _hint_data, _constants).unwrap();
 
@@ -113,7 +115,6 @@ pub fn compute_mod_circuit(
 
         let py_circuit_id = py.eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)?;
         let witnesses = run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
-        println!("got witnesses: {:?}", witnesses);
 
         for (i, witness) in witnesses.iter()?.enumerate() {
             let addr = (witness_target_ptr + i).unwrap();

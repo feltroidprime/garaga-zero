@@ -4,7 +4,6 @@ use cairo_vm::{
     Felt252,
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
-        builtin_hint_processor::sha256_utils::sha256_finalize,
         hint_processor_definition::{HintExtension, HintProcessorLogic},
     },
     types::exec_scope::ExecutionScopes,
@@ -30,13 +29,11 @@ impl CustomHintProcessor {
     pub fn new() -> Self {
         Self {
             hints: Self::hints(),
-            // Initialize the builtin hint processor
             builtin_hint_proc: BuiltinHintProcessor::new_empty(),
         }
     }
 
     fn hints() -> HashMap<String, HintImpl> {
-        // ... existing code ...
         let mut hints = HashMap::<String, HintImpl>::new();
         hints.insert(modulo_circuit::HINT_RUN_MODULO_CIRCUIT.into(), modulo_circuit::run_modulo_circuit);
         hints.insert(utils::HINT_RETRIEVE_OUTPUT.into(), utils::hint_retrieve_output);

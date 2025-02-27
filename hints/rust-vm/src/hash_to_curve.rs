@@ -16,7 +16,7 @@ use super::types::{CairoType, UInt384};
 
 pub const HINT_MAP_TO_CURVE_G2: &str = r#"from garaga.hints.io import bigint_pack
 from garaga.algebra import Fp2
-from garaga.definitions import CURVES
+from garaga.definitions import CURVES, PyFelt
 
 g1x = bigint_pack(ids.g1xx, 4, 2**96)
 g1y = bigint_pack(ids.g1xy, 4, 2**96)

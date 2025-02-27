@@ -21,6 +21,7 @@ serde_json = "1.0.132"
 thiserror = "1.0"
 ark-ff = "0.4.0"
 ark-bls12-381 = "0.4.0"
+hex = "0.4.3"
 
 [package.metadata.pyo3-build-config]
 python-path = "venv/bin/python"

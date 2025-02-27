@@ -67,8 +67,11 @@ func run_modulo_circuit{
     );  // write(Input)
 
     %{
+        from garaga.hints.io import pack_bigint_ptr, fill_felt_ptr
         from hints.python_wrapper.modulo_circuit import run_modulo_circuit_hints
-        witnesses = run_modulo_circuit_hints(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit)
+        inputs = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
+
+        witnesses = run_modulo_circuit_hints(inputs, ids.N_LIMBS, ids.BASE, ids.circuit.name, ids.circuit.curve_id)
         fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)
     %}
 
