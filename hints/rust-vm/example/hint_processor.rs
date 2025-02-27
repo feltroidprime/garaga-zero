@@ -4,6 +4,7 @@ use cairo_vm::{
     Felt252,
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
+        builtin_hint_processor::sha256_utils::sha256_finalize,
         hint_processor_definition::{HintExtension, HintProcessorLogic},
     },
     types::exec_scope::ExecutionScopes,
@@ -52,7 +53,11 @@ impl CustomHintProcessor {
             basic_field_ops::hint_is_opposite_mod_p,
         );
         hints.insert(hash_to_curve::HINT_MAP_TO_CURVE_G2.into(), hash_to_curve::hint_map_to_curve_g2);
-
+        hints.insert(sha256::HINT_SHA256_FINALIZE.into(), sha256::hint_sha256_finalize);
+        hints.insert(debug::PRINT_FELT_HEX.into(), debug::print_felt_hex);
+        hints.insert(debug::PRINT_FELT.into(), debug::print_felt);
+        hints.insert(debug::PRINT_STRING.into(), debug::print_string);
+        hints.insert(debug::PRINT_UINT384.into(), debug::print_uint384);
         hints
     }
 }
@@ -78,7 +83,6 @@ impl HintProcessorLogic for CustomHintProcessor {
     ) -> Result<HintExtension, HintError> {
         if let Some(hpd) = hint_data.downcast_ref::<HintProcessorData>() {
             let hint_code = hpd.code.as_str();
-            println!("hint_code: {}", hint_code);
             // First try our custom hints
             if let Some(hint_impl) = self.hints.get(hint_code) {
                 return hint_impl(vm, exec_scopes, hpd, constants).map(|_| HintExtension::default());
