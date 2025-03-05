@@ -496,9 +496,13 @@ func is_eq_mod_p{range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr
         x = bigint_pack(ids.x, 4, 2**96)
         y = bigint_pack(ids.y, 4, 2**96)
         p = bigint_pack(ids.p, 4, 2**96)
+        memory[ap] = int(x % p == y % p)
     %}
 
-    if (nondet %{ x % p == y % p %} != 0) {
+    let is_eq = [ap];
+    ap += 1;
+
+    if (is_eq != 0) {
         assert_eq_mod_p(x, y, p);
         return (res=1);
     } else {

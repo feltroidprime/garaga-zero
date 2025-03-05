@@ -166,3 +166,27 @@ pub fn hint_is_opposite_mod_p(
     let is_opposite = x.0 % p.0.clone() == (BigUint::ZERO - y.0) % p.0;
     insert_value_into_ap(vm, Felt252::from(is_opposite))
 }
+
+pub const HINT_IS_EQ_MOD_P: &str = r#"from garaga.hints.io import bigint_pack
+x = bigint_pack(ids.x, 4, 2**96)
+y = bigint_pack(ids.y, 4, 2**96)
+p = bigint_pack(ids.p, 4, 2**96)
+memory[ap] = int(x % p == y % p)"#;
+
+pub fn hint_is_eq_mod_p(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let x_ptr = get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let y_ptr = get_relocatable_from_var_name("y", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let p_ptr = get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let x = UInt384::from_memory(vm, x_ptr).unwrap();
+    let y = UInt384::from_memory(vm, y_ptr).unwrap();
+    let p = UInt384::from_memory(vm, p_ptr).unwrap();
+
+    let is_eq = x.0 % p.0.clone() == y.0 % p.0;
+    insert_value_into_ap(vm, Felt252::from(is_eq))
+}
