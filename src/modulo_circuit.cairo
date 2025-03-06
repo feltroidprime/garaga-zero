@@ -68,7 +68,7 @@ func run_modulo_circuit{
 
     %{
         from garaga.hints.io import pack_bigint_ptr, fill_felt_ptr
-        from hints.python_wrapper.modulo_circuit import run_modulo_circuit_hints
+        from hints.python_wrapper.circuits import run_modulo_circuit_hints
         inputs = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
 
         witnesses = run_modulo_circuit_hints(inputs, ids.N_LIMBS, ids.BASE, ids.circuit.name, ids.circuit.curve_id)
@@ -124,17 +124,11 @@ func run_extension_field_modulo_circuit{
     );  // write(Input)
 
     %{
-        from precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
         from garaga.hints.io import bigint_split, pack_bigint_ptr, fill_felt_ptr, flatten
-        circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
-        circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
-        EXTF_MOD_CIRCUIT = ALL_FUSTAT_CIRCUITS[circuit_id]['class'](ids.circuit.curve_id, auto_run=False)
+        from hints.python_wrapper.circuits import run_extension_field_modulo_circuit_hints
+        inputs = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
 
-        EXTF_MOD_CIRCUIT = EXTF_MOD_CIRCUIT.run_circuit(circuit_input)
-        print(f"\t{ids.circuit.constants_ptr_len} Constants and {ids.circuit.input_len//4} Inputs copied to RC_96 memory segment at position {ids.range_check96_ptr}")
-
-        commitments = flatten([bigint_split(x.value, ids.N_LIMBS, ids.BASE) for x in EXTF_MOD_CIRCUIT.commitments])
-        witnesses = flatten([bigint_split(x.value, ids.N_LIMBS, ids.BASE) for x in EXTF_MOD_CIRCUIT.witnesses])
+        witnesses, commitments = run_extension_field_modulo_circuit_hints(inputs, ids.N_LIMBS, ids.BASE, ids.circuit.name, ids.circuit.curve_id)
         fill_felt_ptr(x=commitments, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len)
         fill_felt_ptr(x=witnesses, memory=memory, address=ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len + ids.circuit.commitments_len)
         print(f"\t{len(commitments)//4} Commitments & {len(witnesses)//4} witnesses computed and filled in RC_96 memory segment at positions {ids.range_check96_ptr+ids.circuit.constants_ptr_len * ids.N_LIMBS+ids.circuit.input_len} and {ids.range_check96_ptr + ids.circuit.constants_ptr_len * ids.N_LIMBS + ids.circuit.input_len + ids.circuit.commitments_len}")
@@ -145,7 +139,7 @@ func run_extension_field_modulo_circuit{
     let n_elmts_to_hash_without_Q = (
         circuit.commitments_len + circuit.input_len - circuit.big_Q_len
     ) / N_LIMBS;
-    %{ print(f"n_elmts_to_hash_without_Q = {ids.n_elmts_to_hash_without_Q}") %}
+    // %{ print(f"n_elmts_to_hash_without_Q = {ids.n_elmts_to_hash_without_Q}") %}
 
     assert poseidon_ptr[0].input.s0 = circuit.name;
     assert poseidon_ptr[0].input.s1 = 0;
@@ -159,7 +153,7 @@ func run_extension_field_modulo_circuit{
         n=n_elmts_to_hash_without_Q,
         curve_id=circuit.curve_id,
     );
-    %{ print(f"I C0 CAIRO: {hex(ids.c0)}") %}
+    // %{ print(f"I C0 CAIRO: {hex(ids.c0)}") %}
     // The intermediate state is already computed by the previous call to hash_efelt_transcript
     // It is (continuable_hash, c0, s2)
     let (local Z: felt, _, _) = hash_efelt_transcript(
@@ -177,21 +171,21 @@ func run_extension_field_modulo_circuit{
     //     init_hash=circuit.name,
     //     curve_id=circuit.curve_id,
     // );
-    %{ print(f"\tZ = Hash(Input|Commitments) = Poseidon({(ids.circuit.input_len+ids.circuit.commitments_len)//ids.N_LIMBS} * [Uint384]) computed") %}
-    %{ print(f"\tN={ids.circuit.N_Euclidean_equations} felt252 from Poseidon transcript retrieved.") %}
+    // %{ print(f"\tZ = Hash(Input|Commitments) = Poseidon({(ids.circuit.input_len+ids.circuit.commitments_len)//ids.N_LIMBS} * [Uint384]) computed") %}
+    // %{ print(f"\tN={ids.circuit.N_Euclidean_equations} felt252 from Poseidon transcript retrieved.") %}
 
-    %{
-        # Sanity Check :
-        assert ids.Z == EXTF_MOD_CIRCUIT.transcript.continuable_hash, f"Z for circuit {EXTF_MOD_CIRCUIT.name} does not match {hex(ids.Z)} {hex(EXTF_MOD_CIRCUIT.transcript.continuable_hash)}"
-    %}
+    // %{
+    //     # Sanity Check :
+    //     assert ids.Z == EXTF_MOD_CIRCUIT.transcript.continuable_hash, f"Z for circuit {EXTF_MOD_CIRCUIT.name} does not match {hex(ids.Z)} {hex(EXTF_MOD_CIRCUIT.transcript.continuable_hash)}"
+    // %}
 
     tempvar range_check96_ptr = range_check96_ptr + circuit.constants_ptr_len * N_LIMBS +
         circuit.input_len + circuit.commitments_len + circuit.witnesses_len;
 
     write_felts_to_value_segment(values_start=&c0, n=1);
     write_felts_to_value_segment(values_start=&Z, n=1);
-    %{ print(f"\tbase random coeff c0&Z written to value segment") %}
-    %{ print(f"\tRunning ModuloBuiltin circuit...") %}
+    // %{ print(f"\tbase random coeff c0&Z written to value segment") %}
+    // %{ print(f"\tRunning ModuloBuiltin circuit...") %}
     run_mod_p_circuit(
         p=p,
         values_ptr=values_ptr,
