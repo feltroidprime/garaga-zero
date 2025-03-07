@@ -23,10 +23,7 @@ def run_modulo_circuit_hints(
 def run_extension_field_modulo_circuit_hints(
     circuit_input: list[int], N_LIMBS: int, BASE: int, circuit_id: int, curve_id: int
 ) -> tuple[list[int], list[int]]:
-    print(f"circuit_id: {hex(circuit_id)}")
-    print(f"circuit_inputs: {[hex(elem) for elem in circuit_input]}")
     circuit_id = find_best_circuit_id_from_int(circuit_id)
-    print(f"best_match: {circuit_id.name}")
     EXTF_MOD_CIRCUIT = ALL_FUSTAT_CIRCUITS[circuit_id]["class"](
         curve_id, auto_run=False
     )

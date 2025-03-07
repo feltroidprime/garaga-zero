@@ -163,7 +163,6 @@ pub fn compute_extension_field_mod_circuit(
     let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
     let circuit = ExtensionFieldModuloCircuit::from_memory(vm, circuit_address).unwrap();
     let range_check_ptr = get_ptr_from_var_name("range_check96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
-    println!("circuit: {:?}", circuit);
     let move_amt: usize = (circuit.constants_ptr_len * Felt252::from(n_limbs) + circuit.input_len)
         .try_into()
         .unwrap();
@@ -171,8 +170,6 @@ pub fn compute_extension_field_mod_circuit(
 
     let commitments_len: usize = circuit.commitments_len.try_into().unwrap();
     let witnesses_target_ptr = (commitments_target_ptr + commitments_len).unwrap();
-
-    println!("entering python");
 
     Python::with_gil(|py| {
         // Try to import the module directly first
@@ -182,41 +179,31 @@ pub fn compute_extension_field_mod_circuit(
             add_module_paths_to_python(py)?;
         }
 
-        println!("imported module");
-
         // Now try the import again
         let all_circuits = py.import("hints.python_wrapper.circuits")?;
         let run_circuit_hints = all_circuits.getattr("run_extension_field_modulo_circuit_hints")?;
-
-        println!("got run_circuit_hints");
 
         let py_input = circuit_input
             .iter()
             .map(|uint384| -> PyResult<PyObject> {
                 let bytes = uint384.to_bytes();
-                println!("bytes: {:?}", bytes);
                 let py_int = py.eval(&format!("int.from_bytes({:?}, 'big')", bytes), None, None)?;
 
                 Ok(py_int.into())
             })
             .collect::<PyResult<Vec<_>>>()?;
-        println!("packed input: {:?}", py_input);
 
         let py_circuit_id = py.eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)?;
-        println!("got circuit id");
         let result = run_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
-        println!("got result");
         // Unpack the tuple returned by the Python function (witnesses, commitments)
         let witnesses = result.get_item(0)?;
         let commitments = result.get_item(1)?;
-        println!("unpacked result");
         // Process commitments
         for (i, commitment) in commitments.iter()?.enumerate() {
             let addr = (commitments_target_ptr + i).unwrap();
             let val: u128 = commitment.unwrap().extract()?;
             vm.insert_value(addr, Felt252::from(val)).unwrap();
         }
-        println!("processed commitments");
 
         // Process witnesses
         for (i, witness) in witnesses.iter()?.enumerate() {
@@ -224,7 +211,6 @@ pub fn compute_extension_field_mod_circuit(
             let val: u128 = witness.unwrap().extract()?;
             vm.insert_value(addr, Felt252::from(val)).unwrap();
         }
-        println!("processed witnesses");
         Ok(())
     })
 
