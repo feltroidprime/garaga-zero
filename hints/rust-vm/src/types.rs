@@ -71,8 +71,8 @@ impl CairoType for UInt384 {
         Ok((address + 4)?)
     }
 
-    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        Ok(4)
+    fn n_fields() -> usize {
+        4
     }
 }
 
@@ -94,8 +94,8 @@ pub struct ModuloCircuit {
     pub curve_id: Felt252,
 }
 
-impl ModuloCircuit {
-    pub fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+impl CairoType for ModuloCircuit {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         Ok(Self {
             constants_ptr: vm.get_relocatable((address + 0)?)?,
             add_offsets_ptr: vm.get_relocatable((address + 1)?)?,
@@ -114,7 +114,7 @@ impl ModuloCircuit {
         })
     }
 
-    pub fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
         vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
@@ -132,7 +132,7 @@ impl ModuloCircuit {
         Ok((address + 14)?)
     }
 
-    pub fn n_fields() -> usize {
+    fn n_fields() -> usize {
         14
     }
 }
@@ -158,8 +158,8 @@ pub struct ExtensionFieldModuloCircuit {
     pub curve_id: Felt252,
 }
 
-impl ExtensionFieldModuloCircuit {
-    pub fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+impl CairoType for ExtensionFieldModuloCircuit  {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         Ok(Self {
             constants_ptr: vm.get_relocatable((address + 0)?)?,
             add_offsets_ptr: vm.get_relocatable((address + 1)?)?,
@@ -181,7 +181,7 @@ impl ExtensionFieldModuloCircuit {
         })
     }
 
-    pub fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
         vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
@@ -202,27 +202,13 @@ impl ExtensionFieldModuloCircuit {
         Ok((address + 17)?)
     }
 
-    pub fn n_fields() -> usize {
+    fn n_fields() -> usize {
         17
-    }
-}
-
-impl CairoType for ExtensionFieldModuloCircuit {
-    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
-        Self::from_memory(vm, address)
-    }
-
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
-        self.to_memory(vm, address)
-    }
-
-    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        Ok(Self::n_fields())
     }
 }
 
 pub trait CairoType: Sized {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError>;
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError>;
-    fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError>;
+    fn n_fields() -> usize;
 }
