@@ -71,8 +71,8 @@ impl CairoType for UInt384 {
         Ok((address + 4)?)
     }
 
-    fn n_fields(_vm: &VirtualMachine, _address: Relocatable) -> Result<usize, MemoryError> {
-        Ok(4)
+    fn n_fields() -> usize {
+        4
     }
 }
 
@@ -94,8 +94,8 @@ pub struct ModuloCircuit {
     pub curve_id: Felt252,
 }
 
-impl ModuloCircuit {
-    pub fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+impl CairoType for ModuloCircuit {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
         Ok(Self {
             constants_ptr: vm.get_relocatable((address + 0)?)?,
             add_offsets_ptr: vm.get_relocatable((address + 1)?)?,
@@ -114,7 +114,7 @@ impl ModuloCircuit {
         })
     }
 
-    pub fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
         vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
@@ -132,13 +132,83 @@ impl ModuloCircuit {
         Ok((address + 14)?)
     }
 
-    pub fn n_fields() -> usize {
+    fn n_fields() -> usize {
         14
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExtensionFieldModuloCircuit {
+    pub constants_ptr: Relocatable,
+    pub add_offsets_ptr: Relocatable,
+    pub mul_offsets_ptr: Relocatable,
+    pub output_offsets_ptr: Relocatable,
+    pub constants_ptr_len: Felt252,
+    pub input_len: Felt252,
+    pub commitments_len: Felt252,
+    pub big_q_len: Felt252,
+    pub witnesses_len: Felt252,
+    pub output_len: Felt252,
+    pub continuous_output: Felt252,
+    pub add_mod_n: Felt252,
+    pub mul_mod_n: Felt252,
+    pub n_assert_eq: Felt252,
+    pub n_euclidean_equations: Felt252,
+    pub name: Felt252,
+    pub curve_id: Felt252,
+}
+
+impl CairoType for ExtensionFieldModuloCircuit  {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+        Ok(Self {
+            constants_ptr: vm.get_relocatable((address + 0)?)?,
+            add_offsets_ptr: vm.get_relocatable((address + 1)?)?,
+            mul_offsets_ptr: vm.get_relocatable((address + 2)?)?,
+            output_offsets_ptr: vm.get_relocatable((address + 3)?)?,
+            constants_ptr_len: *vm.get_integer((address + 4)?)?,
+            input_len: *vm.get_integer((address + 5)?)?,
+            commitments_len: *vm.get_integer((address + 6)?)?,
+            big_q_len: *vm.get_integer((address + 7)?)?,
+            witnesses_len: *vm.get_integer((address + 8)?)?,
+            output_len: *vm.get_integer((address + 9)?)?,
+            continuous_output: *vm.get_integer((address + 10)?)?,
+            add_mod_n: *vm.get_integer((address + 11)?)?,
+            mul_mod_n: *vm.get_integer((address + 12)?)?,
+            n_assert_eq: *vm.get_integer((address + 13)?)?,
+            n_euclidean_equations: *vm.get_integer((address + 14)?)?,
+            name: *vm.get_integer((address + 15)?)?,
+            curve_id: *vm.get_integer((address + 16)?)?,
+        })
+    }
+
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+        vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
+        vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
+        vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
+        vm.insert_value((address + 3)?, MaybeRelocatable::from(self.output_offsets_ptr))?;
+        vm.insert_value((address + 4)?, self.constants_ptr_len)?;
+        vm.insert_value((address + 5)?, self.input_len)?;
+        vm.insert_value((address + 6)?, self.commitments_len)?;
+        vm.insert_value((address + 7)?, self.big_q_len)?;
+        vm.insert_value((address + 8)?, self.witnesses_len)?;
+        vm.insert_value((address + 9)?, self.output_len)?;
+        vm.insert_value((address + 10)?, self.continuous_output)?;
+        vm.insert_value((address + 11)?, self.add_mod_n)?;
+        vm.insert_value((address + 12)?, self.mul_mod_n)?;
+        vm.insert_value((address + 13)?, self.n_assert_eq)?;
+        vm.insert_value((address + 14)?, self.n_euclidean_equations)?;
+        vm.insert_value((address + 15)?, self.name)?;
+        vm.insert_value((address + 16)?, self.curve_id)?;
+        Ok((address + 17)?)
+    }
+
+    fn n_fields() -> usize {
+        17
     }
 }
 
 pub trait CairoType: Sized {
     fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError>;
     fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError>;
-    fn n_fields(vm: &VirtualMachine, address: Relocatable) -> Result<usize, MemoryError>;
+    fn n_fields() -> usize;
 }

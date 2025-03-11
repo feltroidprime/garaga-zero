@@ -13,7 +13,7 @@ path = "example/main.rs"
 
 [dependencies]
 pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0-rc4", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
+cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
 num-bigint = "0.4.6"
 num-traits = "0.2.19"
 serde = "1.0.215"

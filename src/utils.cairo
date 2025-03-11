@@ -5,7 +5,7 @@ from starkware.cairo.common.uint256 import Uint256
 from definitions import STARK_MIN_ONE_D2, N_LIMBS, BASE, bls, UInt384, get_min_one
 from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
 from starkware.cairo.common.math import assert_le_felt
-
+from debug import print_string, print_felt
 // Continue sponge construction from the latest poseidon builin state for an array of UInt384.
 func hash_efelt_transcript{poseidon_ptr: PoseidonBuiltin*}(
     limbs_ptr: felt*, n: felt, curve_id: felt
@@ -30,7 +30,8 @@ func hash_full_transcript_and_get_Z_3_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
     //         print(f"Will Hash {hex(e)}")
     // %}
 
-    let elements_end = &limbs_ptr[n * N_LIMBS];
+    local offset = n * N_LIMBS;
+    let elements_end = &limbs_ptr[offset];
 
     tempvar elements = limbs_ptr;
     tempvar pos_ptr = cast(poseidon_ptr, felt*);
@@ -107,13 +108,9 @@ func hash_full_transcript_and_get_Z_4_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
 ) -> (_s0: felt, _s1: felt, _s2: felt) {
     alloc_locals;
     local BASE = 2 ** 96;
-    // %{
-    //     from garaga.hints.io import pack_bigint_ptr
-    //     to_hash=pack_bigint_ptr(memory, ids.limbs_ptr, ids.N_LIMBS, ids.BASE, ids.n)
-    //     for e in to_hash:
-    //         print(f"Will Hash {hex(e)}")
-    // %}
-    let elements_end = &limbs_ptr[n * N_LIMBS];
+
+    local offset = n * N_LIMBS;
+    let elements_end = &limbs_ptr[offset];
 
     tempvar elements = limbs_ptr;
     tempvar pos_ptr = cast(poseidon_ptr, felt*);

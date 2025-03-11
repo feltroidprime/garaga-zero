@@ -133,7 +133,14 @@ pub fn hint_assert_neq_mod_p(
     let y = UInt384::from_memory(vm, y_ptr).unwrap();
     let p = UInt384::from_memory(vm, p_ptr).unwrap();
 
-    let diff = (x.0 - y.0) % &p.0;
+    let diff = if y.0 > x.0 {
+        // Equivalent to ((x - y) % p) in Python, which gives a non-negative result
+        // When x < y, we compute (x + p - y) % p
+        (&x.0 + &p.0 - &y.0) % &p.0
+    } else {
+        // When x >= y, we can just do the subtraction directly
+        (&x.0 - &y.0) % &p.0
+    };
     let diff_inv = UInt384(diff.modinv(&p.0).unwrap());
 
     let diff_inv_addr = get_relocatable_from_var_name("diff_inv_d0", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
@@ -163,7 +170,17 @@ pub fn hint_is_opposite_mod_p(
     let y = UInt384::from_memory(vm, y_ptr).unwrap();
     let p = UInt384::from_memory(vm, p_ptr).unwrap();
 
-    let is_opposite = x.0 % p.0.clone() == (BigUint::ZERO - y.0) % p.0;
+    // Compute x and y modulo p.
+    let x_mod = &x.0 % &p.0;
+    let y_mod = &y.0 % &p.0;
+    // Compute the additive inverse of y mod p safely.
+    let neg_y = if y_mod == BigUint::ZERO {
+        BigUint::ZERO
+    } else {
+        &p.0 - y_mod
+    };
+
+    let is_opposite = x_mod == neg_y;
     insert_value_into_ap(vm, Felt252::from(is_opposite))
 }
 
@@ -189,4 +206,26 @@ pub fn hint_is_eq_mod_p(
 
     let is_eq = x.0 % p.0.clone() == y.0 % p.0;
     insert_value_into_ap(vm, Felt252::from(is_eq))
+}
+
+
+pub const HINT_ASSERT_NOT_ZERO_MOD_P: &str = r#"from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
+assert builtin_runners["mul_mod_builtin"].instance_def.batch_size == 1
+
+ModBuiltinRunner.fill_memory(
+    memory=memory,
+    add_mod=None,
+    mul_mod=(ids.mul_mod_ptr.address_, builtin_runners["mul_mod_builtin"], 1),
+)"#;
+
+pub fn hint_assert_not_zero_mod_p(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let mul_mod_ptr = get_ptr_from_var_name("mul_mod_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    vm.mod_builtin_fill_memory(None, Some((mul_mod_ptr, 1)), Some(1))
+        .map_err(HintError::Internal)
 }
