@@ -170,7 +170,17 @@ pub fn hint_is_opposite_mod_p(
     let y = UInt384::from_memory(vm, y_ptr).unwrap();
     let p = UInt384::from_memory(vm, p_ptr).unwrap();
 
-    let is_opposite = x.0 % p.0.clone() == (BigUint::ZERO - y.0) % p.0;
+    // Compute x and y modulo p.
+    let x_mod = &x.0 % &p.0;
+    let y_mod = &y.0 % &p.0;
+    // Compute the additive inverse of y mod p safely.
+    let neg_y = if y_mod == BigUint::ZERO {
+        BigUint::ZERO
+    } else {
+        &p.0 - y_mod
+    };
+
+    let is_opposite = x_mod == neg_y;
     insert_value_into_ap(vm, Felt252::from(is_opposite))
 }
 

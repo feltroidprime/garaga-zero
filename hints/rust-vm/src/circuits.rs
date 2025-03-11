@@ -48,7 +48,6 @@ pub fn run_extension_field_modulo_circuit(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    println!("Running extension field modulo circuit");
     compute_extension_field_mod_circuit(vm, exec_scopes, _hint_data, _constants).unwrap();
 
     Ok(())
