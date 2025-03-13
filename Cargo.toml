@@ -11,7 +11,7 @@ path = "hints/rust-vm/src/lib.rs"
 name = "garaga_zero_example"
 path = "hints/rust-vm/example/main.rs"
 
-[workspace.dependencies]
+[dependencies]
 pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
 cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
 num-bigint = "0.4.6"

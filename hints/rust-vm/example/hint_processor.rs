@@ -9,7 +9,7 @@ use cairo_vm::{
     vm::{errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker, vm_core::VirtualMachine},
     Felt252,
 };
-use garaga_zero_hints::*;
+use garaga_zero::*;
 
 pub type HintImpl = fn(&mut VirtualMachine, &mut ExecutionScopes, &HintProcessorData, &HashMap<String, Felt252>) -> Result<(), HintError>;
 
