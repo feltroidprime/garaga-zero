@@ -1,9 +1,15 @@
-[workspace]
-resolver = "2"
+[package]
+name = "garaga-zero"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "hints/rust-vm"
-]
+[lib]
+name = "garaga_zero"
+path = "hints/rust-vm/src/lib.rs"
+
+[[bin]]
+name = "garaga_zero_example"
+path = "hints/rust-vm/example/main.rs"
 
 [workspace.dependencies]
 pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
