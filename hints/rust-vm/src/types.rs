@@ -1,17 +1,22 @@
 use cairo_vm::{
     Felt252,
     types::relocatable::{MaybeRelocatable, Relocatable},
-    vm::{errors::memory_errors::MemoryError, vm_core::VirtualMachine},
+    vm::{
+        errors::hint_errors::HintError,
+        vm_core::VirtualMachine,
+    },
 };
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 use pyo3::{PyAny, types::PyList};
 
+use crate::error::GaragaZeroError;
+
 #[derive(Debug, Clone)]
 pub struct UInt384(pub BigUint);
 
 impl UInt384 {
-    pub fn from_python_list(py_list: &PyAny) -> Result<Self, MemoryError> {
+    pub fn from_python_list(py_list: &PyAny) -> Result<Self, HintError> {
         // Convert PyAny to PyList
         let py_list = py_list.downcast::<PyList>().unwrap();
 
@@ -19,10 +24,26 @@ impl UInt384 {
         assert_eq!(py_list.len(), 4, "Expected exactly 4 limbs");
 
         // Extract the limbs as u128 values
-        let d0_val: u128 = py_list.get_item(0).unwrap().extract().unwrap();
-        let d1_val: u128 = py_list.get_item(1).unwrap().extract().unwrap();
-        let d2_val: u128 = py_list.get_item(2).unwrap().extract().unwrap();
-        let d3_val: u128 = py_list.get_item(3).unwrap().extract().unwrap();
+        let d0_val: u128 = py_list
+            .get_item(0)
+            .map_err(GaragaZeroError::Python)?
+            .extract()
+            .map_err(GaragaZeroError::Python)?;
+        let d1_val: u128 = py_list
+            .get_item(1)
+            .map_err(GaragaZeroError::Python)?
+            .extract()
+            .map_err(GaragaZeroError::Python)?;
+        let d2_val: u128 = py_list
+            .get_item(2)
+            .map_err(GaragaZeroError::Python)?
+            .extract()
+            .map_err(GaragaZeroError::Python)?;
+        let d3_val: u128 = py_list
+            .get_item(3)
+            .map_err(GaragaZeroError::Python)?
+            .extract()
+            .map_err(GaragaZeroError::Python)?;
 
         // Create the BigUint from the limbs
         let mut value = BigUint::zero();
@@ -51,7 +72,7 @@ impl UInt384 {
 }
 
 impl CairoType for UInt384 {
-    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, HintError> {
         let d0 = BigUint::from_bytes_be(&vm.get_integer((address + 0)?)?.to_bytes_be());
         let d1 = BigUint::from_bytes_be(&vm.get_integer((address + 1)?)?.to_bytes_be());
         let d2 = BigUint::from_bytes_be(&vm.get_integer((address + 2)?)?.to_bytes_be());
@@ -60,7 +81,7 @@ impl CairoType for UInt384 {
         Ok(Self(bigint))
     }
 
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, HintError> {
         let limbs = self.to_limbs();
 
         vm.insert_value((address + 0)?, Felt252::from_bytes_be_slice(&limbs[0]))?;
@@ -95,7 +116,7 @@ pub struct ModuloCircuit {
 }
 
 impl CairoType for ModuloCircuit {
-    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, HintError> {
         Ok(Self {
             constants_ptr: vm.get_relocatable((address + 0)?)?,
             add_offsets_ptr: vm.get_relocatable((address + 1)?)?,
@@ -114,7 +135,7 @@ impl CairoType for ModuloCircuit {
         })
     }
 
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, HintError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
         vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
@@ -158,8 +179,8 @@ pub struct ExtensionFieldModuloCircuit {
     pub curve_id: Felt252,
 }
 
-impl CairoType for ExtensionFieldModuloCircuit  {
-    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError> {
+impl CairoType for ExtensionFieldModuloCircuit {
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, HintError> {
         Ok(Self {
             constants_ptr: vm.get_relocatable((address + 0)?)?,
             add_offsets_ptr: vm.get_relocatable((address + 1)?)?,
@@ -181,7 +202,7 @@ impl CairoType for ExtensionFieldModuloCircuit  {
         })
     }
 
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError> {
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, HintError> {
         vm.insert_value((address + 0)?, MaybeRelocatable::from(self.constants_ptr))?;
         vm.insert_value((address + 1)?, MaybeRelocatable::from(self.add_offsets_ptr))?;
         vm.insert_value((address + 2)?, MaybeRelocatable::from(self.mul_offsets_ptr))?;
@@ -208,7 +229,7 @@ impl CairoType for ExtensionFieldModuloCircuit  {
 }
 
 pub trait CairoType: Sized {
-    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, MemoryError>;
-    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, MemoryError>;
+    fn from_memory(vm: &VirtualMachine, address: Relocatable) -> Result<Self, HintError>;
+    fn to_memory(&self, vm: &mut VirtualMachine, address: Relocatable) -> Result<Relocatable, HintError>;
     fn n_fields() -> usize;
 }

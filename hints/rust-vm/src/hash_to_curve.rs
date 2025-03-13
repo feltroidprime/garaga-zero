@@ -13,6 +13,7 @@ use cairo_vm::{
 use num_bigint::BigUint;
 
 use super::types::{CairoType, UInt384};
+use crate::error::GaragaZeroError;
 
 pub const HINT_MAP_TO_CURVE_G2: &str = r#"from garaga.hints.io import bigint_pack
 from garaga.algebra import Fp2
@@ -50,12 +51,10 @@ pub fn hint_map_to_curve_g2(
     let is_quad_res = match curve_id.to_string().as_str() {
         "1" => {
             // BLS12-381 curve
-            is_quadratic_residue_bls12_381(&g1xx.0, &g1xy.0)
+            is_quadratic_residue_bls12_381(&g1xx.0, &g1xy.0)?
         }
         // Add other curves as needed
-        _ => {
-            return Err(HintError::CustomHint(format!("Unknown curve_id: {}", curve_id).into_boxed_str()));
-        }
+        _ => return Err(GaragaZeroError::Custom(format!("Unknown curve_id: {}", curve_id).into()).into()),
     };
 
     // Set the result in the VM
@@ -67,23 +66,21 @@ pub fn hint_map_to_curve_g2(
 }
 
 // Check if an element is a quadratic residue in the Fq2 field of BLS12-381
-fn is_quadratic_residue_bls12_381(real: &BigUint, imaginary: &BigUint) -> bool {
+fn is_quadratic_residue_bls12_381(real: &BigUint, imaginary: &BigUint) -> Result<bool, GaragaZeroError> {
     // Convert BigUint to field elements in Fq
     let real_str = real.to_str_radix(10);
     let imag_str = imaginary.to_str_radix(10);
 
     let real_fq = Bls12_381Fq::from_str(&real_str)
-        .map_err(|_| HintError::CustomHint("Failed to convert real part to Fq".into()))
-        .unwrap();
+        .map_err(|_| GaragaZeroError::Custom(format!("Failed to convert real part to Fq: {}", real_str).into()))?;
 
     let imag_fq = Bls12_381Fq::from_str(&imag_str)
-        .map_err(|_| HintError::CustomHint("Failed to convert imaginary part to Fq".into()))
-        .unwrap();
+        .map_err(|_| GaragaZeroError::Custom(format!("Failed to convert imaginary part to Fq: {}", imag_str).into()))?;
 
     // Create an Fq2 element
     let element = Bls12_381Fq2::new(real_fq, imag_fq);
 
     // Check if it's a quadratic residue
     // In a finite field, an element is a quadratic residue if it has a square root
-    element.legendre().is_qr()
+    Ok(element.legendre().is_qr())
 }

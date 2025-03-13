@@ -174,11 +174,7 @@ pub fn hint_is_opposite_mod_p(
     let x_mod = &x.0 % &p.0;
     let y_mod = &y.0 % &p.0;
     // Compute the additive inverse of y mod p safely.
-    let neg_y = if y_mod == BigUint::ZERO {
-        BigUint::ZERO
-    } else {
-        &p.0 - y_mod
-    };
+    let neg_y = if y_mod == BigUint::ZERO { BigUint::ZERO } else { &p.0 - y_mod };
 
     let is_opposite = x_mod == neg_y;
     insert_value_into_ap(vm, Felt252::from(is_opposite))
@@ -207,7 +203,6 @@ pub fn hint_is_eq_mod_p(
     let is_eq = x.0 % p.0.clone() == y.0 % p.0;
     insert_value_into_ap(vm, Felt252::from(is_eq))
 }
-
 
 pub const HINT_ASSERT_NOT_ZERO_MOD_P: &str = r#"from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
 assert builtin_runners["mul_mod_builtin"].instance_def.batch_size == 1

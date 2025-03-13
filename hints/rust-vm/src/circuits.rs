@@ -8,9 +8,8 @@ use cairo_vm::{
 };
 use pyo3::prelude::*;
 
-use crate::types::ExtensionFieldModuloCircuit;
-
 use super::types::{CairoType, ModuloCircuit, UInt384};
+use crate::{error::GaragaZeroError, types::ExtensionFieldModuloCircuit};
 
 pub const HINT_RUN_MODULO_CIRCUIT: &str = r#"from garaga.hints.io import pack_bigint_ptr, fill_felt_ptr
 from hints.python_wrapper.circuits import run_modulo_circuit_hints
@@ -25,8 +24,7 @@ pub fn run_modulo_circuit(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-
-    compute_mod_circuit(vm, exec_scopes, _hint_data, _constants).unwrap();
+    compute_mod_circuit(vm, exec_scopes, _hint_data, _constants)?;
 
     Ok(())
 }
@@ -48,15 +46,12 @@ pub fn run_extension_field_modulo_circuit(
     _hint_data: &HintProcessorData,
     _constants: &HashMap<String, Felt252>,
 ) -> Result<(), HintError> {
-    compute_extension_field_mod_circuit(vm, exec_scopes, _hint_data, _constants).unwrap();
-
-    Ok(())
+    compute_extension_field_mod_circuit(vm, exec_scopes, _hint_data, _constants)
 }
-
 
 /// Packs multiple limbs into a single value using the formula: sum(limb[i] * base^i)
 fn bigint_pack_ptr(vm: &VirtualMachine, ptr: Relocatable) -> Result<UInt384, HintError> {
-    Ok(UInt384::from_memory(vm, ptr)?)
+    UInt384::from_memory(vm, ptr)
 }
 
 /// Packs multiple groups of limbs into a vector of values
@@ -72,7 +67,6 @@ fn pack_bigint_ptr_vec(vm: &VirtualMachine, ptr: Relocatable, n_limbs: u32, n_el
 
     Ok(values)
 }
-
 
 /// Adds potential module paths to Python's sys.path to ensure imports work
 fn add_module_paths_to_python(py: Python) -> PyResult<()> {
@@ -106,8 +100,8 @@ pub fn compute_mod_circuit(
     _exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     constants: &HashMap<String, Felt252>,
-) -> Result<(), PyErr> {
-    let (circuit_input, circuit_id, curve_id, n_limbs, base) = perpare_mod_circuits_python_inputs(vm, _exec_scopes, hint_data, constants);
+) -> Result<(), HintError> {
+    let (circuit_input, circuit_id, curve_id, n_limbs, base) = perpare_mod_circuits_python_inputs(vm, _exec_scopes, hint_data, constants)?;
     let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
     let circuit = ModuloCircuit::from_memory(vm, circuit_address).unwrap();
     let range_check_ptr = get_ptr_from_var_name("range_check96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
@@ -122,12 +116,12 @@ pub fn compute_mod_circuit(
         let import_result = py.import("hints.python_wrapper.circuits");
 
         if import_result.is_err() {
-            add_module_paths_to_python(py)?;
+            add_module_paths_to_python(py).map_err(GaragaZeroError::Python)?;
         }
 
         // Now try the import again
-        let all_circuits = py.import("hints.python_wrapper.circuits")?;
-        let run_modulo_circuit_hints = all_circuits.getattr("run_modulo_circuit_hints")?;
+        let all_circuits = py.import("hints.python_wrapper.circuits").map_err(GaragaZeroError::Python)?;
+        let run_modulo_circuit_hints = all_circuits.getattr("run_modulo_circuit_hints").map_err(GaragaZeroError::Python)?;
 
         let py_input = circuit_input
             .iter()
@@ -137,14 +131,19 @@ pub fn compute_mod_circuit(
 
                 Ok(py_int.into())
             })
-            .collect::<PyResult<Vec<_>>>()?;
+            .collect::<PyResult<Vec<_>>>()
+            .map_err(GaragaZeroError::Python)?;
 
-        let py_circuit_id = py.eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)?;
-        let witnesses = run_modulo_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
+        let py_circuit_id = py
+            .eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)
+            .map_err(GaragaZeroError::Python)?;
+        let witnesses = run_modulo_circuit_hints
+            .call1((py_input, n_limbs, base, py_circuit_id, curve_id))
+            .map_err(GaragaZeroError::Python)?;
 
-        for (i, witness) in witnesses.iter()?.enumerate() {
+        for (i, witness) in witnesses.iter().map_err(GaragaZeroError::Python)?.enumerate() {
             let addr = (witness_target_ptr + i).unwrap();
-            let val: u128 = witness.unwrap().extract()?;
+            let val: u128 = witness.unwrap().extract().map_err(GaragaZeroError::Python)?;
             vm.insert_value(addr, Felt252::from(val)).unwrap();
         }
 
@@ -157,11 +156,12 @@ pub fn compute_extension_field_mod_circuit(
     _exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     constants: &HashMap<String, Felt252>,
-) -> Result<(), PyErr> {
-    let (circuit_input, circuit_id, curve_id, n_limbs, base) = perpare_extension_field_mod_circuits_python_inputs(vm, _exec_scopes, hint_data, constants);
-    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
-    let circuit = ExtensionFieldModuloCircuit::from_memory(vm, circuit_address).unwrap();
-    let range_check_ptr = get_ptr_from_var_name("range_check96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+) -> Result<(), HintError> {
+    let (circuit_input, circuit_id, curve_id, n_limbs, base) =
+        perpare_extension_field_mod_circuits_python_inputs(vm, _exec_scopes, hint_data, constants)?;
+    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let circuit = ExtensionFieldModuloCircuit::from_memory(vm, circuit_address)?;
+    let range_check_ptr = get_ptr_from_var_name("range_check96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let move_amt: usize = (circuit.constants_ptr_len * Felt252::from(n_limbs) + circuit.input_len)
         .try_into()
         .unwrap();
@@ -175,12 +175,14 @@ pub fn compute_extension_field_mod_circuit(
         let import_result = py.import("hints.python_wrapper.circuits");
 
         if import_result.is_err() {
-            add_module_paths_to_python(py)?;
+            add_module_paths_to_python(py).map_err(GaragaZeroError::Python)?;
         }
 
         // Now try the import again
-        let all_circuits = py.import("hints.python_wrapper.circuits")?;
-        let run_circuit_hints = all_circuits.getattr("run_extension_field_modulo_circuit_hints")?;
+        let all_circuits = py.import("hints.python_wrapper.circuits").map_err(GaragaZeroError::Python)?;
+        let run_circuit_hints = all_circuits
+            .getattr("run_extension_field_modulo_circuit_hints")
+            .map_err(GaragaZeroError::Python)?;
 
         let py_input = circuit_input
             .iter()
@@ -190,68 +192,73 @@ pub fn compute_extension_field_mod_circuit(
 
                 Ok(py_int.into())
             })
-            .collect::<PyResult<Vec<_>>>()?;
+            .collect::<PyResult<Vec<_>>>()
+            .map_err(GaragaZeroError::Python)?;
 
-        let py_circuit_id = py.eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)?;
-        let result = run_circuit_hints.call1((py_input, n_limbs, base, py_circuit_id, curve_id))?;
+        let py_circuit_id = py
+            .eval(&format!("int.from_bytes({:?}, 'big')", circuit_id), None, None)
+            .map_err(GaragaZeroError::Python)?;
+        let result = run_circuit_hints
+            .call1((py_input, n_limbs, base, py_circuit_id, curve_id))
+            .map_err(GaragaZeroError::Python)?;
         // Unpack the tuple returned by the Python function (witnesses, commitments)
-        let witnesses = result.get_item(0)?;
-        let commitments = result.get_item(1)?;
+        let witnesses = result.get_item(0).map_err(GaragaZeroError::Python)?;
+        let commitments = result.get_item(1).map_err(GaragaZeroError::Python)?;
         // Process commitments
-        for (i, commitment) in commitments.iter()?.enumerate() {
+        for (i, commitment) in commitments.iter().map_err(GaragaZeroError::Python)?.enumerate() {
             let addr = (commitments_target_ptr + i).unwrap();
-            let val: u128 = commitment.unwrap().extract()?;
-            vm.insert_value(addr, Felt252::from(val)).unwrap();
+            let val: u128 = commitment.unwrap().extract().map_err(GaragaZeroError::Python)?;
+            vm.insert_value(addr, Felt252::from(val))?;
         }
 
         // Process witnesses
-        for (i, witness) in witnesses.iter()?.enumerate() {
+        for (i, witness) in witnesses.iter().map_err(GaragaZeroError::Python)?.enumerate() {
             let addr = (witnesses_target_ptr + i).unwrap();
-            let val: u128 = witness.unwrap().extract()?;
-            vm.insert_value(addr, Felt252::from(val)).unwrap();
+            let val: u128 = witness.unwrap().extract().map_err(GaragaZeroError::Python)?;
+            vm.insert_value(addr, Felt252::from(val))?;
         }
         Ok(())
     })
-
 }
 
-
+#[allow(clippy::type_complexity)]
 fn perpare_mod_circuits_python_inputs(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     constants: &HashMap<String, Felt252>,
-) -> (Vec<UInt384>, Vec<u8>, u64, u32, u128) {
-    let input_ptr = get_ptr_from_var_name("input", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+) -> Result<(Vec<UInt384>, Vec<u8>, u64, u32, u128), HintError> {
+    let input_ptr = get_ptr_from_var_name("input", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let n_limbs: u32 = constants["definitions.N_LIMBS"].try_into().unwrap();
-    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
-    let circuit = ModuloCircuit::from_memory(vm, circuit_address).unwrap();
+    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let circuit = ModuloCircuit::from_memory(vm, circuit_address)?;
     let input_len: u32 = circuit.input_len.try_into().unwrap();
     let base: u128 = constants["definitions.BASE"].try_into().unwrap();
 
-    let circuit_input = pack_bigint_ptr_vec(vm, input_ptr, n_limbs, input_len as usize / n_limbs as usize).unwrap();
+    let circuit_input = pack_bigint_ptr_vec(vm, input_ptr, n_limbs, input_len as usize / n_limbs as usize)?;
     let circuit_id = circuit.name.to_bytes_be().to_vec();
     let curve_id: u64 = circuit.curve_id.try_into().unwrap();
 
-    (circuit_input, circuit_id, curve_id, n_limbs, base)
+    Ok((circuit_input, circuit_id, curve_id, n_limbs, base))
 }
 
+#[allow(clippy::type_complexity)]
 fn perpare_extension_field_mod_circuits_python_inputs(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
     hint_data: &HintProcessorData,
     constants: &HashMap<String, Felt252>,
-) -> (Vec<UInt384>, Vec<u8>, u64, u32, u128) {
-    let input_ptr = get_ptr_from_var_name("input", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
+) -> Result<(Vec<UInt384>, Vec<u8>, u64, u32, u128), HintError> {
+    let input_ptr = get_ptr_from_var_name("input", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let n_limbs: u32 = constants["definitions.N_LIMBS"].try_into().unwrap();
-    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking).unwrap();
-    let circuit = ExtensionFieldModuloCircuit::from_memory(vm, circuit_address).unwrap();
+    let circuit_address = get_ptr_from_var_name("circuit", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let circuit = ExtensionFieldModuloCircuit::from_memory(vm, circuit_address)?;
     let input_len: u32 = circuit.input_len.try_into().unwrap();
     let base: u128 = constants["definitions.BASE"].try_into().unwrap();
 
-    let circuit_input = pack_bigint_ptr_vec(vm, input_ptr, n_limbs, input_len as usize / n_limbs as usize).unwrap();
+    let circuit_input = pack_bigint_ptr_vec(vm, input_ptr, n_limbs, input_len as usize / n_limbs as usize)?;
     let circuit_id = circuit.name.to_bytes_be().to_vec();
     let curve_id: u64 = circuit.curve_id.try_into().unwrap();
 
-    (circuit_input, circuit_id, curve_id, n_limbs, base)
+    Ok((circuit_input, circuit_id, curve_id, n_limbs, base))
 }

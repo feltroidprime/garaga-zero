@@ -1,6 +1,11 @@
 use std::collections::HashMap;
 
-use cairo_vm::{hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, sha256_utils::sha256_finalize}, types::exec_scope::ExecutionScopes, vm::{errors::hint_errors::HintError, vm_core::VirtualMachine}, Felt252};
+use cairo_vm::{
+    Felt252,
+    hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, sha256_utils::sha256_finalize},
+    types::exec_scope::ExecutionScopes,
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+};
 
 // There is a mismatch in the line breaks, temp fix while investigating
 pub const HINT_SHA256_FINALIZE: &str = r#"# Add dummy pairs of input and output.

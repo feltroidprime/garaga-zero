@@ -1,13 +1,19 @@
 use std::{cmp::Ordering, collections::HashMap};
 
 use cairo_vm::{
+    Felt252,
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
-        hint_utils::{get_address_from_var_name, get_integer_from_var_name, get_ptr_from_var_name, get_relocatable_from_var_name, insert_value_into_ap},
-    }, types::{exec_scope::ExecutionScopes, relocatable::Relocatable}, vm::{errors::hint_errors::HintError, vm_core::VirtualMachine}, Felt252
+        hint_utils::{
+            get_integer_from_var_name, get_ptr_from_var_name,
+            insert_value_into_ap,
+        },
+    },
+    types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
 };
 use num_bigint::BigUint;
-use crate::types::CairoType;
+
 use crate::types::UInt384;
 
 pub fn print_address_range(vm: &VirtualMachine, address: Relocatable, depth: usize, padding: Option<usize>) {
@@ -51,7 +57,8 @@ pub fn hint_retrieve_output(
     insert_value_into_ap(vm, insert)
 }
 
-pub const HINT_HASH_FULL_TRANSCRIPT_AND_GET_Z_4_LIMBS_1: &str = "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 6*ids.N_LIMBS)";
+pub const HINT_HASH_FULL_TRANSCRIPT_AND_GET_Z_4_LIMBS_1: &str =
+    "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= 6*ids.N_LIMBS)";
 pub fn hint_hash_full_transcript_and_get_z_4_limbs_1(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
@@ -67,7 +74,8 @@ pub fn hint_hash_full_transcript_and_get_z_4_limbs_1(
     insert_value_into_ap(vm, Felt252::from(result))
 }
 
-pub const HINT_HASH_FULL_TRANSCRIPT_AND_GET_Z_4_LIMBS_2: &str = "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= ids.N_LIMBS)";
+pub const HINT_HASH_FULL_TRANSCRIPT_AND_GET_Z_4_LIMBS_2: &str =
+    "memory[ap] = to_felt_or_relocatable(ids.elements_end - ids.elements >= ids.N_LIMBS)";
 pub fn hint_hash_full_transcript_and_get_z_4_limbs_2(
     vm: &mut VirtualMachine,
     _exec_scopes: &mut ExecutionScopes,
@@ -78,8 +86,7 @@ pub fn hint_hash_full_transcript_and_get_z_4_limbs_2(
     let elements = get_ptr_from_var_name("elements", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let n_limbs = constants.get("definitions.N_LIMBS").unwrap();
 
-
-    let result = Felt252::from((elements_end - elements)?) >= n_limbs.clone();
+    let result = Felt252::from((elements_end - elements)?) >= *n_limbs;
     insert_value_into_ap(vm, Felt252::from(result))
 }
 
@@ -104,11 +111,7 @@ pub fn hint_write_felts_to_value_segment_2(
     let i = exec_scopes.get_ref::<usize>("i")?;
     let n = get_integer_from_var_name("n", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
-    let result = if Felt252::from(*i) == n {
-        Felt252::ONE
-    } else {
-        Felt252::ZERO
-    };
+    let result = if Felt252::from(*i) == n { Felt252::ONE } else { Felt252::ZERO };
 
     // Increment i for next iteration - use the same type as initialization (usize)
     *exec_scopes.get_mut_ref::<usize>("i")? += 1;
@@ -131,14 +134,16 @@ pub fn hint_write_felts_to_value_segment_3(
     let values_start = get_ptr_from_var_name("values_start", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
     let value = vm.get_integer((values_start + (i - 1))?)?;
 
-    let limbs = UInt384(BigUint::from_bytes_be(&value.to_bytes_be())).to_limbs().map(|limb| Felt252::from_bytes_be_slice(&limb));
+    let limbs = UInt384(BigUint::from_bytes_be(&value.to_bytes_be()))
+        .to_limbs()
+        .map(|limb| Felt252::from_bytes_be_slice(&limb));
 
     assert_eq!(limbs[3], Felt252::ZERO);
     let rc_96_ptr = get_ptr_from_var_name("rc_96_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
 
     // So we need to update the values at these memory locations
-    vm.insert_value(rc_96_ptr, limbs[0].clone())?;
-    vm.insert_value((rc_96_ptr + 1)?, limbs[1].clone())?;
-    vm.insert_value((rc_96_ptr + 2)?, limbs[2].clone())?;
+    vm.insert_value(rc_96_ptr, limbs[0])?;
+    vm.insert_value((rc_96_ptr + 1)?, limbs[1])?;
+    vm.insert_value((rc_96_ptr + 2)?, limbs[2])?;
     Ok(())
 }

@@ -35,7 +35,7 @@ impl CustomHintProcessor {
 
     fn hints() -> HashMap<String, HintImpl> {
         let mut hints = HashMap::<String, HintImpl>::new();
-        hints.insert(modulo_circuit::HINT_RUN_MODULO_CIRCUIT.into(), modulo_circuit::run_modulo_circuit);
+        hints.insert(circuits::HINT_RUN_MODULO_CIRCUIT.into(), circuits::run_modulo_circuit);
         hints.insert(utils::HINT_RETRIEVE_OUTPUT.into(), utils::hint_retrieve_output);
         hints.insert(basic_field_ops::HINT_UINT384_IS_LE.into(), basic_field_ops::hint_uint384_is_le);
         hints.insert(basic_field_ops::HINT_ADD_MOD_CIRCUIT.into(), basic_field_ops::hint_add_mod_circuit);
