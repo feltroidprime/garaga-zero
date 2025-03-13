@@ -1,7 +1,7 @@
 [package]
 name = "garaga-zero-hints"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 name = "garaga_zero_hints"
@@ -12,16 +12,13 @@ name = "garaga-zero-example"
 path = "example/main.rs"
 
 [dependencies]
-pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
-cairo-vm = { git = "https://github.com/lambdaclass/cairo-vm", tag = "v2.0.0", features = ["extensive_hints", "clap", "cairo-1-hints", "mod_builtin"] }
-num-bigint = "0.4.6"
-num-traits = "0.2.19"
-serde = "1.0.215"
-serde_json = "1.0.132"
-thiserror = "1.0"
-ark-ff = "0.4.0"
-ark-bls12-381 = "0.4.0"
-hex = "0.4.3"
-
-[package.metadata.pyo3-build-config]
-python-path = "venv/bin/python"
+pyo3.workspace = true
+cairo-vm.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+ark-ff.workspace = true
+ark-bls12-381.workspace = true
+hex.workspace = true

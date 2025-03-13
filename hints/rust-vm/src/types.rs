@@ -1,14 +1,11 @@
 use cairo_vm::{
-    Felt252,
     types::relocatable::{MaybeRelocatable, Relocatable},
-    vm::{
-        errors::hint_errors::HintError,
-        vm_core::VirtualMachine,
-    },
+    vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+    Felt252,
 };
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
-use pyo3::{PyAny, types::PyList};
+use pyo3::{types::PyList, PyAny};
 
 use crate::error::GaragaZeroError;
 

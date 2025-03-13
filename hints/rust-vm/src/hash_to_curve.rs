@@ -3,12 +3,12 @@ use std::{collections::HashMap, str::FromStr};
 use ark_bls12_381::{Fq as Bls12_381Fq, Fq2 as Bls12_381Fq2};
 use ark_ff::Field;
 use cairo_vm::{
-    Felt252,
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData, hint_utils::get_relocatable_from_var_name,
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+    Felt252,
 };
 use num_bigint::BigUint;
 

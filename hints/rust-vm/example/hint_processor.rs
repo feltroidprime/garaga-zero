@@ -1,13 +1,13 @@
 use std::{any::Any, collections::HashMap};
 
 use cairo_vm::{
-    Felt252,
     hint_processor::{
         builtin_hint_processor::builtin_hint_processor_definition::{BuiltinHintProcessor, HintProcessorData},
         hint_processor_definition::{HintExtension, HintProcessorLogic},
     },
     types::exec_scope::ExecutionScopes,
     vm::{errors::hint_errors::HintError, runners::cairo_runner::ResourceTracker, vm_core::VirtualMachine},
+    Felt252,
 };
 use garaga_zero_hints::*;
 

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use cairo_vm::{
-    Felt252,
     hint_processor::builtin_hint_processor::{builtin_hint_processor_definition::HintProcessorData, hint_utils::get_ptr_from_var_name},
     types::{exec_scope::ExecutionScopes, relocatable::Relocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+    Felt252,
 };
 use pyo3::prelude::*;
 

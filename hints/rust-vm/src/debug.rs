@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use cairo_vm::{
-    Felt252,
     hint_processor::builtin_hint_processor::{
         builtin_hint_processor_definition::HintProcessorData,
         hint_utils::{get_address_from_var_name, get_integer_from_var_name},
     },
     types::{exec_scope::ExecutionScopes, relocatable::MaybeRelocatable},
     vm::{errors::hint_errors::HintError, vm_core::VirtualMachine},
+    Felt252,
 };
 
 use super::types::{CairoType, UInt384};
