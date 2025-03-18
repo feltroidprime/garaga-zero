@@ -76,7 +76,7 @@ func map_to_curve_g2{
     %{
         from garaga.hints.io import bigint_pack
         from garaga.algebra import Fp2
-        from garaga.definitions import CURVES
+        from garaga.definitions import CURVES, PyFelt
 
         g1x = bigint_pack(ids.g1xx, 4, 2**96)
         g1y = bigint_pack(ids.g1xy, 4, 2**96)

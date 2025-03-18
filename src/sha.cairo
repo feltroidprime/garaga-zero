@@ -273,7 +273,7 @@ func sha256_inner{range_check_ptr, pow2_array: felt*, sha256_ptr: felt*}(
 
 // Computes the sha256 hash of the input chunk from `message` to `message + SHA256_INPUT_CHUNK_SIZE_FELTS`
 func _sha256_chunk{range_check_ptr, sha256_ptr: felt*}() {
-    let message = sha256_ptr;
+    let sha256_start = sha256_ptr;
     let state = sha256_ptr + SHA256_INPUT_CHUNK_SIZE_FELTS;
     let output = state + SHA256_STATE_SIZE_FELTS;
 
@@ -286,7 +286,7 @@ func _sha256_chunk{range_check_ptr, sha256_ptr: felt*}() {
         _sha256_state_size_felts = int(ids.SHA256_STATE_SIZE_FELTS)
         assert 0 <= _sha256_state_size_felts < 100
         w = compute_message_schedule(memory.get_range(
-            ids.message, _sha256_input_chunk_size_felts))
+            ids.sha256_start, _sha256_input_chunk_size_felts))
         new_state = sha2_compress_function(memory.get_range(ids.state, _sha256_state_size_felts), w)
         segments.write_arg(ids.output, new_state)
     %}
