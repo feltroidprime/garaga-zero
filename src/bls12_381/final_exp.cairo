@@ -2,7 +2,7 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
-from definitions import E12D, E6D, is_zero_E6D, one_E6D, one_E12D, bls, TRUE
+from definitions import E12D, E6D, is_zero_E6D, one_E6D, one_E12D, bls, TRUE, FALSE
 
 from precompiled_circuits.final_exp_part_1_bls12_381 import get_BLS12_381_FINAL_EXP_PART_1_circuit
 from precompiled_circuits.final_exp_part_2_bls12_381 import get_BLS12_381_FINAL_EXP_PART_2_circuit
@@ -48,14 +48,19 @@ func final_exponentiation{
     let _sum = [cast(output + 2 * E6D.SIZE, E6D*)];
     let (_sum_is_zero) = is_zero_E6D(_sum, bls.CURVE_ID);
 
-    if (_sum_is_zero == TRUE) {
+    if (_sum_is_zero == FALSE) {
+        if (den_is_zero == FALSE) {
+            let (circuit) = get_BLS12_381_FINAL_EXP_PART_2_circuit();
+            let (output: felt*, _: felt) = run_extension_field_modulo_circuit_continuation(
+                circuit, output, Z
+            );
+            return (res=[cast(output, E12D*)]);
+        } else {
+            let (one_E12: E12D) = one_E12D();
+            return (res=one_E12);
+        }
+    } else {
         let (one_E12: E12D) = one_E12D();
         return (res=one_E12);
-    } else {
-        let (circuit) = get_BLS12_381_FINAL_EXP_PART_2_circuit();
-        let (output: felt*, _: felt) = run_extension_field_modulo_circuit_continuation(
-            circuit, output, Z
-        );
-        return (res=[cast(output, E12D*)]);
     }
 }

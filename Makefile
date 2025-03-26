@@ -16,6 +16,9 @@ profile:
 	@echo "Thank you for trying to improve Garaga's speed!"
 	./tools/make/launch_cairo_files.py -profile
 
+format:
+	./tools/make/format_cairo_files.sh
+
 profile-no-compile:
 	@echo "A script to select, run & profile one Cairo file. File must be already compiled."
 	@echo "Thank you for trying to improve Garaga's speed!"
