@@ -50,3 +50,6 @@ hints:
 
 rewrite:
 	source venv/bin/activate && python precompiled_circuits/all_circuits.py
+
+format:
+	./tools/make/format.sh

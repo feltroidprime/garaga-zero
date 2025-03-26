@@ -14,6 +14,13 @@ namespace bls {
     const P2 = 0x434bacd764774b84f38512bf;
     const P3 = 0x1a0111ea397fe69a4b1ba7b6;
 
+    // (p - 1) / 2
+    // ph= 0x0A0111EA397FE69A4B1BA7B6434BACD764774B84F38512BF6730D2A0F6B0F6241EABFFFEB153FFFFB9FEFFFFFFFFAAAA
+    const PH0 = 0xb153ffffb9feffffffffaaaa;
+    const PH1 = 0x6730d2a0f6b0f6241eabfffe;
+    const PH2 = 0x434bacd764774b84f38512bf;
+    const PH3 = 0x0a0111ea397fe69a4b1ba7b6;
+
     // The following constants represent the size of the curve:
     // n = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
     const N0 = 0xfffe5bfeffffffff00000001;

@@ -1,6 +1,7 @@
 from definitions import (
     get_P,
     G1Point,
+    G2Point,
     get_b,
     get_a,
     get_b2,
@@ -18,17 +19,20 @@ from basic_field_ops import (
     is_zero_mod_p,
     assert_eq_mod_p,
     sub_mod_p,
+    uint384_is_le,
 )
 
 from precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_G2_circuit,
     get_IS_ON_CURVE_G1_circuit,
     get_DERIVE_POINT_FROM_X_circuit,
+    get_DECOMPRESS_G1_POINT_circuit,
     get_SLOPE_INTERCEPT_SAME_POINT_circuit,
     get_ACC_EVAL_POINT_CHALLENGE_SIGNED_circuit,
     get_RHS_FINALIZE_ACC_circuit,
     get_EVAL_FUNCTION_CHALLENGE_DUPL_circuit,
     get_ADD_EC_POINT_circuit,
+    get_ADD_EC_POINTS_G2_circuit,
     get_DOUBLE_EC_POINT_circuit,
 )
 from starkware.cairo.common.uint256 import Uint256
@@ -183,6 +187,56 @@ func add_ec_points{
         assert input[3] = Q.y;
         let (res) = run_modulo_circuit(circuit, cast(input, felt*));
         return (res=[cast(res, G1Point*)]);
+    }
+}
+
+// Unoptimized version of add_ec_points for G2
+// ToDo: add double point for G2 for improved performance
+func add_ec_points_g2{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(curve_id: felt, P: G2Point, Q: G2Point) -> (res: G2Point) {
+    alloc_locals;
+
+    let (circuit) = get_ADD_EC_POINTS_G2_circuit(curve_id);
+    let (input: UInt384*) = alloc();
+    assert input[0] = P.x0;
+    assert input[1] = P.x1;
+    assert input[2] = P.y0;
+    assert input[3] = P.y1;
+    assert input[4] = Q.x0;
+    assert input[5] = Q.x1;
+    assert input[6] = Q.y0;
+    assert input[7] = Q.y1;
+
+    let (output: felt*) = run_modulo_circuit(circuit, cast(input, felt*));
+    return (res=[cast(output, G2Point*)]);
+}
+
+func derive_g1_point_from_x{
+    range_check_ptr, range_check96_ptr: felt*, add_mod_ptr: ModBuiltin*, mul_mod_ptr: ModBuiltin*
+}(curve_id: felt, x: UInt384, s: felt) -> (res: G1Point) {
+    alloc_locals;
+
+    let (b_weirstrass: UInt384) = get_b(curve_id);
+    let (circuit) = get_DECOMPRESS_G1_POINT_circuit(curve_id);
+
+    let (input: UInt384*) = alloc();
+    assert input[0] = b_weirstrass;
+    assert input[1] = x;
+
+    let (output_array: felt*) = run_modulo_circuit(circuit, cast(input, felt*));
+    let outputs: UInt384* = cast(output_array, UInt384*);
+
+    let y = outputs[0];
+    let y_neg = outputs[1];
+
+    // Compare y and y_neg to determine which one to use based on s_bit
+    let (y_lt_y_neg) = uint384_is_le(y, y_neg);
+
+    if (y_lt_y_neg == s) {
+        return (res=G1Point(x, y_neg));
+    } else {
+        return (res=G1Point(x, y));
     }
 }
 
