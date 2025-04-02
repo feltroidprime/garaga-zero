@@ -30,7 +30,7 @@ func hash_full_transcript_and_get_Z_3_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
     //         print(f"Will Hash {hex(e)}")
     // %}
 
-    let elements_end = &limbs_ptr[n * N_LIMBS];
+    local elements_end: felt* = &limbs_ptr[n * N_LIMBS];
 
     tempvar elements = limbs_ptr;
     tempvar pos_ptr = cast(poseidon_ptr, felt*);
@@ -113,7 +113,7 @@ func hash_full_transcript_and_get_Z_4_LIMBS{poseidon_ptr: PoseidonBuiltin*}(
     //     for e in to_hash:
     //         print(f"Will Hash {hex(e)}")
     // %}
-    let elements_end = &limbs_ptr[n * N_LIMBS];
+    local elements_end: felt* = &limbs_ptr[n * N_LIMBS];
 
     tempvar elements = limbs_ptr;
     tempvar pos_ptr = cast(poseidon_ptr, felt*);

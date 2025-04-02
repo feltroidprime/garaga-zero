@@ -4,16 +4,37 @@ version = "0.0.1"
 requires-python = ">=3.10,<3.11"
 
 dependencies = [
-"garaga @ git+https://github.com/keep-starknet-strange/garaga.git@hydra_upd",
-"cairo-lang==0.13.3",
-"protobuf==3.20.3",
-"inquirer",
-"pandas",
-"tabulate",
-"pytest",
-"pre-commit",
+  "garaga",
+  "cairo-lang==0.13.3",
+  "protobuf==3.20.3",
+  "inquirer",
+  "pandas",
+  "tabulate",
+  "pytest",
+  "pre-commit",
 ]
 
+[tool.uv.source]
+garaga = { git = "https://github.com/keep-starknet-strange/garaga.git", rev = "hydra_upd" }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "**/*.py",
+  "src/**/*.cairo", # Include all .cairo files in src directory
+]
+packages = ["."]
+
+[tool.hatch.build]
+artifacts = [
+  "src/**/*.cairo", # Also include .cairo files as artifacts
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.isort]
 profile = "black"
@@ -22,7 +43,7 @@ profile = "black"
 cache_dir = "build/.pytest_cache"
 testpaths = ["tests/hydra"]
 # addopts = "--tb=short --showlocals"
-asyncio_default_fixture_loop_scope = "function"  # Explicitly set the loop scope
+asyncio_default_fixture_loop_scope = "function" # Explicitly set the loop scope
 
 [tool.black]
 line-length = 88
