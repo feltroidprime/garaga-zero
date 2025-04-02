@@ -17,7 +17,6 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     DummyCircuit,
     EvalFunctionChallengeDuplCircuit,
     FinalizeFunctionChallengeDuplCircuit,
-    FullECIPCircuitBatched,
     InitFunctionChallengeDuplCircuit,
     IsOnCurveG1Circuit,
     IsOnCurveG1G2Circuit,
@@ -185,11 +184,6 @@ ALL_FUSTAT_CIRCUITS = {
     CircuitID.DOUBLE_EC_POINT: {
         "class": DoubleECPointCircuit,
         "params": None,
-        "filename": "ec",
-    },
-    CircuitID.FULL_ECIP_BATCHED: {
-        "class": FullECIPCircuitBatched,
-        "params": [{"n_points": k} for k in [1, 2]],
         "filename": "ec",
     },
 }
