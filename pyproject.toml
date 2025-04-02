@@ -4,7 +4,7 @@ version = "0.0.1"
 requires-python = ">=3.10,<3.11"
 
 dependencies = [
-"garaga @ git+https://github.com/keep-starknet-strange/garaga.git@hydra_upd",
+"garaga == 0.16.0",
 "cairo-lang==0.13.3",
 "protobuf==3.20.3",
 "inquirer",
