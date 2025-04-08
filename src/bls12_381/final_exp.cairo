@@ -28,7 +28,14 @@ func final_exponentiation{
         v0=input.w1, v1=input.w3, v2=input.w5, v3=input.w7, v4=input.w9, v5=input.w11
     );
     let (local circuit_input: felt*) = alloc();
-    memcpy(dst=circuit_input, src=cast(&num, felt*), len=24);
+
+    let (num_is_zero) = is_zero_E6D(num, bls.CURVE_ID);
+    if (num_is_zero == TRUE) {
+        let (one_E12: E12D) = one_E12D();
+        return (res=one_E12);
+    } else {
+        memcpy(dst=circuit_input, src=cast(&num, felt*), len=24);
+    }
 
     let (den_is_zero) = is_zero_E6D(den, bls.CURVE_ID);
     if (den_is_zero == TRUE) {
