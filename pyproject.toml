@@ -14,27 +14,6 @@ dependencies = [
 "pre-commit",
 ]
 
-[tool.uv.sources]
-garaga = { git = "https://github.com/keep-starknet-strange/garaga.git", tag = "v0.16.0" }
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-include = [
-  "**/*.py",
-  "src/**/*.cairo", # Include all .cairo files in src directory
-]
-packages = ["."]
-
-[tool.hatch.build]
-artifacts = [
-  "src/**/*.cairo", # Also include .cairo files as artifacts
-]
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.isort]
 profile = "black"
@@ -43,7 +22,7 @@ profile = "black"
 cache_dir = "build/.pytest_cache"
 testpaths = ["tests/hydra"]
 # addopts = "--tb=short --showlocals"
-asyncio_default_fixture_loop_scope = "function" # Explicitly set the loop scope
+asyncio_default_fixture_loop_scope = "function"  # Explicitly set the loop scope
 
 [tool.black]
 line-length = 88
