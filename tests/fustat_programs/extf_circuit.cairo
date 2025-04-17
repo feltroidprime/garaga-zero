@@ -4,16 +4,18 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 
-from modulo_circuit import (
+from garaga_zero_src.src.modulo_circuit import (
     run_extension_field_modulo_circuit,
     run_extension_field_modulo_circuit_continuation,
 )
-from definitions import bn, bls, UInt384, N_LIMBS, BASE, E12D
+from garaga_zero_src.src.definitions import bn, bls, UInt384, N_LIMBS, BASE, E12D
 
-from precompiled_circuits.fp12_mul_bls12_381 import get_BLS12_381_FP12_MUL_circuit
-from precompiled_circuits.fp12_mul_bn254 import get_BN254_FP12_MUL_circuit
+from garaga_zero_src.src.precompiled_circuits.fp12_mul_bls12_381 import (
+    get_BLS12_381_FP12_MUL_circuit,
+)
+from garaga_zero_src.src.precompiled_circuits.fp12_mul_bn254 import get_BN254_FP12_MUL_circuit
 
-from modulo_circuit import ExtensionFieldModuloCircuit
+from garaga_zero_src.src.modulo_circuit import ExtensionFieldModuloCircuit
 
 func main{
     range_check_ptr,

@@ -4,9 +4,9 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 
-from definitions import bls, UInt384, one_E12D, E12D
-from test_utils import load_pairing_check_inputs
-from bls12_381.multi_pairing_check_3 import multi_pairing_check_3P, G1G2Pair
+from garaga_zero_src.src.definitions import bls, UInt384, one_E12D, E12D
+from garaga_zero_src.src.test_utils import load_pairing_check_inputs
+from garaga_zero_src.src.bls12_381.multi_pairing_check_3 import multi_pairing_check_3P, G1G2Pair
 
 func main{
     range_check_ptr,

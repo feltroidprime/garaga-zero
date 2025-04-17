@@ -4,10 +4,10 @@ from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bitwise import bitwise_xor
 
-from src.basic_field_ops import u512_mod_p
-from src.definitions import get_P
-from src.utils import felt_divmod
-from src.sha import SHA256, HashUtils
+from garaga_zero_src.src.basic_field_ops import u512_mod_p
+from garaga_zero_src.src.definitions import get_P
+from garaga_zero_src.src.utils import felt_divmod
+from garaga_zero_src.src.sha import SHA256, HashUtils
 
 // HashToField functionality, using SHA256 and 32-byte messages
 // DST is "BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_"

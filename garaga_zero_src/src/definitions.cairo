@@ -1,7 +1,7 @@
 from starkware.cairo.common.cairo_builtins import UInt384
 from starkware.cairo.common.cairo_builtins import ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
-from basic_field_ops import is_zero_mod_p
+from garaga_zero_src.src.basic_field_ops import is_zero_mod_p
 
 const TRUE = 1;
 const FALSE = 0;

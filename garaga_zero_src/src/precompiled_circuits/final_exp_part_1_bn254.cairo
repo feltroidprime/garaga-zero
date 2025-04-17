@@ -1,11 +1,11 @@
 from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
-from modulo_circuit import (
+from garaga_zero_src.src.modulo_circuit import (
     ExtensionFieldModuloCircuit,
     ModuloCircuit,
     get_void_modulo_circuit,
     get_void_extension_field_modulo_circuit,
 )
-from definitions import bn, bls
+from garaga_zero_src.src.definitions import bn, bls
 func get_BN254_FINAL_EXP_PART_1_circuit() -> (circuit: ExtensionFieldModuloCircuit*) {
     alloc_locals;
     let (__fp__, _) = get_fp_and_pc();

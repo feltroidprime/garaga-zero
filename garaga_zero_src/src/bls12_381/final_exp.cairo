@@ -2,12 +2,25 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
-from definitions import E12D, E6D, is_zero_E6D, one_E6D, one_E12D, bls, TRUE, FALSE
+from garaga_zero_src.src.definitions import (
+    E12D,
+    E6D,
+    is_zero_E6D,
+    one_E6D,
+    one_E12D,
+    bls,
+    TRUE,
+    FALSE,
+)
 
-from precompiled_circuits.final_exp_part_1_bls12_381 import get_BLS12_381_FINAL_EXP_PART_1_circuit
-from precompiled_circuits.final_exp_part_2_bls12_381 import get_BLS12_381_FINAL_EXP_PART_2_circuit
+from garaga_zero_src.src.precompiled_circuits.final_exp_part_1_bls12_381 import (
+    get_BLS12_381_FINAL_EXP_PART_1_circuit,
+)
+from garaga_zero_src.src.precompiled_circuits.final_exp_part_2_bls12_381 import (
+    get_BLS12_381_FINAL_EXP_PART_2_circuit,
+)
 
-from modulo_circuit import (
+from garaga_zero_src.src.modulo_circuit import (
     run_extension_field_modulo_circuit,
     run_extension_field_modulo_circuit_continuation,
 )

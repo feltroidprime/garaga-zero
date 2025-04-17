@@ -2,7 +2,14 @@ from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin
 from starkware.cairo.common.poseidon_state import PoseidonBuiltinState
 from starkware.cairo.common.uint256 import Uint256
-from definitions import STARK_MIN_ONE_D2, N_LIMBS, BASE, bls, UInt384, get_min_one
+from garaga_zero_src.src.definitions import (
+    STARK_MIN_ONE_D2,
+    N_LIMBS,
+    BASE,
+    bls,
+    UInt384,
+    get_min_one,
+)
 from starkware.cairo.common.registers import get_fp_and_pc, get_label_location
 from starkware.cairo.common.math import assert_le_felt
 

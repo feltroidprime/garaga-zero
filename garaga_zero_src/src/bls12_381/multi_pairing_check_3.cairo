@@ -1,12 +1,12 @@
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin, UInt384
-from definitions import bls, G1G2Pair, TRUE
+from garaga_zero_src.src.definitions import bls, G1G2Pair, TRUE
 
-from precompiled_circuits.multi_pairing_check_bls12_381_3 import (
+from garaga_zero_src.src.precompiled_circuits.multi_pairing_check_bls12_381_3 import (
     get_BLS12_381_MULTI_PAIRING_CHECK_3_circuit,
 )
-from modulo_circuit import run_extension_field_modulo_circuit
-from ec_ops import all_g1_g2_pairs_are_on_curve
+from garaga_zero_src.src.modulo_circuit import run_extension_field_modulo_circuit
+from garaga_zero_src.src.ec_ops import all_g1_g2_pairs_are_on_curve
 
 func multi_pairing_check_3P{
     range_check_ptr,

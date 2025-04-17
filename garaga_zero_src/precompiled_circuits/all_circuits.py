@@ -23,7 +23,8 @@ from garaga.precompiled_circuits.compilable_circuits.common_cairo_fustat_circuit
     RHSFinalizeAccCircuit,
     SlopeInterceptSamePointCircuit,
 )
-from precompiled_circuits.compilable_circuits.fustat_only import (
+
+from garaga_zero_src.precompiled_circuits.compilable_circuits.fustat_only import (
     DerivePointFromXCircuit,
     FinalExpPart1Circuit,
     FinalExpPart2Circuit,

@@ -4,9 +4,18 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 
-from definitions import bn, bls, UInt384, one_E12D, N_LIMBS, BASE, G1Point, get_P
+from garaga_zero_src.src.definitions import (
+    bn,
+    bls,
+    UInt384,
+    one_E12D,
+    N_LIMBS,
+    BASE,
+    G1Point,
+    get_P,
+)
 
-from basic_field_ops import (
+from garaga_zero_src.src.basic_field_ops import (
     add_mod_p,
     sub_mod_p,
     assert_zero_mod_P,

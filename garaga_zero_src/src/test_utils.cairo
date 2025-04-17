@@ -1,6 +1,6 @@
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.registers import get_fp_and_pc
-from definitions import N_LIMBS, BASE
+from garaga_zero_src.src.definitions import N_LIMBS, BASE
 
 func load_random_G1G2_pairs(n_pairs: felt, curve_id: felt) -> (pairs: felt*) {
     alloc_locals;

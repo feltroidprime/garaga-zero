@@ -1,17 +1,17 @@
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin, UInt384
-from definitions import E12D, E6D, G1G2Pair, TRUE, bls
+from garaga_zero_src.src.definitions import E12D, E6D, G1G2Pair, TRUE, bls
 
-from precompiled_circuits.multi_miller_loop_bls12_381_3 import (
+from garaga_zero_src.src.precompiled_circuits.multi_miller_loop_bls12_381_3 import (
     get_BLS12_381_MULTI_MILLER_LOOP_3_circuit,
 )
 
-from modulo_circuit import (
+from garaga_zero_src.src.modulo_circuit import (
     run_extension_field_modulo_circuit,
     run_extension_field_modulo_circuit_continuation,
 )
-from bls12_381.final_exp import final_exponentiation
-from ec_ops import all_g1_g2_pairs_are_on_curve
+from garaga_zero_src.src.bls12_381.final_exp import final_exponentiation
+from garaga_zero_src.src.ec_ops import all_g1_g2_pairs_are_on_curve
 
 func multi_pairing_3P{
     range_check_ptr,

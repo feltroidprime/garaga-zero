@@ -1,4 +1,4 @@
-from definitions import (
+from garaga_zero_src.src.definitions import (
     get_P,
     G1Point,
     get_b,
@@ -12,7 +12,7 @@ from definitions import (
     TRUE,
     FALSE,
 )
-from basic_field_ops import (
+from garaga_zero_src.src.basic_field_ops import (
     is_eq_mod_p,
     is_opposite_mod_p,
     is_zero_mod_p,
@@ -20,7 +20,7 @@ from basic_field_ops import (
     sub_mod_p,
 )
 
-from precompiled_circuits.ec import (
+from garaga_zero_src.src.precompiled_circuits.ec import (
     get_IS_ON_CURVE_G1_G2_circuit,
     get_IS_ON_CURVE_G1_circuit,
     get_DERIVE_POINT_FROM_X_circuit,
@@ -33,14 +33,14 @@ from precompiled_circuits.ec import (
 )
 from starkware.cairo.common.uint256 import Uint256
 
-from modulo_circuit import run_modulo_circuit, ModuloCircuit
+from garaga_zero_src.src.modulo_circuit import run_modulo_circuit, ModuloCircuit
 from starkware.cairo.common.cairo_builtins import ModBuiltin, UInt384, PoseidonBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash, poseidon_hash_many
 
-from utils import (
+from garaga_zero_src.src.utils import (
     felt_to_UInt384,
     sign_to_UInt384,
     neg_3_pow_alloc_80,

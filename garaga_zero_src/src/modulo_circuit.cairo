@@ -3,8 +3,18 @@ from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.modulo import run_mod_p_circuit
 
-from definitions import get_P, BASE, N_LIMBS, is_curve_id_supported, SUPPORTED_CURVE_ID
-from utils import write_felts_to_value_segment, retrieve_output, hash_efelt_transcript
+from garaga_zero_src.src.definitions import (
+    get_P,
+    BASE,
+    N_LIMBS,
+    is_curve_id_supported,
+    SUPPORTED_CURVE_ID,
+)
+from garaga_zero_src.src.utils import (
+    write_felts_to_value_segment,
+    retrieve_output,
+    hash_efelt_transcript,
+)
 
 struct ExtensionFieldModuloCircuit {
     constants_ptr: felt*,
@@ -67,7 +77,7 @@ func run_modulo_circuit{
     );  // write(Input)
 
     %{
-        from precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
+        from garaga_zero_src.precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
         from garaga.hints.io import pack_bigint_ptr, fill_felt_ptr, flatten, bigint_split
         from garaga.definitions import CURVES, PyFelt
         p = CURVES[ids.circuit.curve_id].p
@@ -135,7 +145,7 @@ func run_extension_field_modulo_circuit{
     );  // write(Input)
 
     %{
-        from precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
+        from garaga_zero_src.precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
         from garaga.hints.io import bigint_split, pack_bigint_ptr, fill_felt_ptr, flatten
         circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
         circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
@@ -256,7 +266,7 @@ func run_extension_field_modulo_circuit_continuation{
     );  // write(Input)
 
     %{
-        from precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
+        from garaga_zero_src.precompiled_circuits.all_circuits import ALL_FUSTAT_CIRCUITS, CircuitID, find_best_circuit_id_from_int
         from garaga.hints.io import bigint_split, pack_bigint_ptr, fill_felt_ptr, flatten
         circuit_input = pack_bigint_ptr(memory, ids.input, ids.N_LIMBS, ids.BASE, ids.circuit.input_len//ids.N_LIMBS)
         circuit_id = find_best_circuit_id_from_int(ids.circuit.name)
