@@ -2,14 +2,14 @@
 
 # Function to check a file formatting and print a message based on the outcome
 format_file() {
-    cairo-format -c "$1"
-    local status=$?
-    if [ $status -eq 0 ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - File $1 is formatted correctly"
-    else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - File $1 is not formatted correctly"
-        return $status
-    fi
+	cairo-format -c "$1"
+	local status=$?
+	if [ $status -eq 0 ]; then
+		echo "$(date '+%Y-%m-%d %H:%M:%S') - File $1 is formatted correctly"
+	else
+		echo "$(date '+%Y-%m-%d %H:%M:%S') - File $1 is not formatted correctly"
+		return $status
+	fi
 }
 
 # Export the function so it's available in subshells

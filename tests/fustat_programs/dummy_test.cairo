@@ -4,10 +4,10 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 
-from definitions import bn, bls, UInt384, one_E12D, N_LIMBS, BASE, G1Point
+from garaga_zero.definitions import bn, bls, UInt384, one_E12D, N_LIMBS, BASE, G1Point
 
-from precompiled_circuits.dummy import get_DUMMY_circuit
-from modulo_circuit import run_modulo_circuit
+from garaga_zero.precompiled_circuits.dummy import get_DUMMY_circuit
+from garaga_zero.modulo_circuit import run_modulo_circuit
 
 func main{
     range_check_ptr,

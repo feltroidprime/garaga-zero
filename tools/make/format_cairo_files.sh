@@ -2,14 +2,14 @@
 
 # Function to format a file and print a message based on the outcome
 format_file() {
-    cairo-format -i "$1"
-    local status=$?
-    if [ $status -eq 0 ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Successfully formatted $1"
-    else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Failed to format $1"
-        return $status
-    fi
+	cairo-format -i "$1"
+	local status=$?
+	if [ $status -eq 0 ]; then
+		echo "$(date '+%Y-%m-%d %H:%M:%S') - Successfully formatted $1"
+	else
+		echo "$(date '+%Y-%m-%d %H:%M:%S') - Failed to format $1"
+		return $status
+	fi
 }
 
 # Export the function so it's available in subshells
