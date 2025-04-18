@@ -4,14 +4,14 @@ version = "0.0.1"
 requires-python = ">=3.10,<3.11"
 
 dependencies = [
-"garaga == 0.16.0",
-"cairo-lang==0.13.3",
-"protobuf==3.20.3",
-"inquirer",
-"pandas",
-"tabulate",
-"pytest",
-"pre-commit",
+  "garaga == 0.16.0",
+  "cairo-lang==0.13.3",
+  "protobuf==3.20.3",
+  "inquirer",
+  "pandas",
+  "tabulate",
+  "pytest",
+  "pre-commit",
 ]
 
 [tool.uv.sources]
@@ -26,7 +26,8 @@ include = [
   "**/*.py",
   "src/**/*.cairo", # Include all .cairo files in src directory
 ]
-packages = ["."]
+packages = ["./garaga_zero_src"]
+exclude = ["tests"]
 
 [tool.hatch.build]
 artifacts = [
