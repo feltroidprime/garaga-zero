@@ -4,9 +4,9 @@ from starkware.cairo.common.cairo_builtins import BitwiseBuiltin, ModBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.uint256 import Uint256
 
-from garaga_zero_src.src.hash_to_field import HashToField32
-from garaga_zero_src.src.sha import SHA256, HashUtils
-from garaga_zero_src.src.utils import pow2alloc128
+from garaga_zero.hash_to_field import HashToField32
+from garaga_zero.sha import SHA256, HashUtils
+from garaga_zero.utils import pow2alloc128
 
 func main{
     range_check_ptr,

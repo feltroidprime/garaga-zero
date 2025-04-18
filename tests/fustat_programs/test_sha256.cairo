@@ -2,8 +2,8 @@
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.alloc import alloc
-from garaga_zero_src.src.sha import SHA256, sha256, HashUtils
-from garaga_zero_src.src.utils import pow2alloc128
+from garaga_zero.sha import SHA256, sha256, HashUtils
+from garaga_zero.utils import pow2alloc128
 
 func main{range_check_ptr, bitwise_ptr: BitwiseBuiltin*}() {
     alloc_locals;

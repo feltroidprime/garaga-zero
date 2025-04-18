@@ -20,7 +20,7 @@ export -f process_cairo_file
 if [[ $1 == "tests" ]]; then
 	directories="./tests/fustat_programs"
 else
-	directories="./garaga_zero_src ./tests/fustat_programs"
+	directories="./src ./tests/fustat_programs"
 fi
 
 # Find all .cairo files and process them in parallel

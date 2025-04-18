@@ -4,10 +4,10 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 
-from garaga_zero_src.src.definitions import bn, bls, UInt384, one_E12D, N_LIMBS, BASE, G1Point
+from garaga_zero.definitions import bn, bls, UInt384, one_E12D, N_LIMBS, BASE, G1Point
 
-from garaga_zero_src.src.ec_ops import derive_EC_point_from_entropy
-from garaga_zero_src.src.modulo_circuit import ExtensionFieldModuloCircuit
+from garaga_zero.ec_ops import derive_EC_point_from_entropy
+from garaga_zero.modulo_circuit import ExtensionFieldModuloCircuit
 
 func main{
     range_check_ptr,

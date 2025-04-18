@@ -4,8 +4,8 @@ from starkware.cairo.common.cairo_builtins import PoseidonBuiltin, ModBuiltin
 from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.cairo.common.alloc import alloc
 
-from garaga_zero_src.src.definitions import bls, UInt384, N_LIMBS, BASE, E12D
-from garaga_zero_src.src.bls12_381.final_exp import final_exponentiation
+from garaga_zero.definitions import bls, UInt384, N_LIMBS, BASE, E12D
+from garaga_zero.bls12_381.final_exp import final_exponentiation
 
 func main{
     range_check_ptr,
