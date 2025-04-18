@@ -9,7 +9,7 @@ Made for the most efficient local proving performance.
 git clone https://github.com/feltroidprime/garaga-zero.git
 cd garaga-zero
 make setup
-source venv/bin/activate
+source .venv/bin/activate
 ```
 
 ## Compile
