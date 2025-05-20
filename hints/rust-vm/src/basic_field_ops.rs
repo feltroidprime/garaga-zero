@@ -224,3 +224,73 @@ pub fn hint_assert_not_zero_mod_p(
     vm.mod_builtin_fill_memory(None, Some((mul_mod_ptr, 1)), Some(1))
         .map_err(HintError::Internal)
 }
+
+pub const HINT_SUM_INV_MOD_P: &str = r#"from garaga.hints.io import bigint_split, bigint_pack
+p = bigint_pack(ids.p, 4, 2**96)
+x = bigint_pack(ids.x, 4, 2**96)
+y = bigint_pack(ids.y, 4, 2**96)
+_sum = (x + y) % p
+sum_inv = pow(_sum, -1, p)
+limbs = bigint_split(sum_inv)
+ids.sum_inv_d0 = limbs[0]
+ids.sum_inv_d1 = limbs[1]
+ids.sum_inv_d2 = limbs[2]
+ids.sum_inv_d3 = limbs[3]"#;
+
+pub fn hint_sum_inv_mod_p(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let x_ptr = get_relocatable_from_var_name("x", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let y_ptr = get_relocatable_from_var_name("y", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let p_ptr = get_relocatable_from_var_name("p", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    let x = UInt384::from_memory(vm, x_ptr)?;
+    let y = UInt384::from_memory(vm, y_ptr)?;
+    let p = UInt384::from_memory(vm, p_ptr)?;
+
+    let sum_val = (&x.0 + &y.0) % &p.0;
+
+    let sum_inv_val = sum_val.modinv(&p.0).ok_or_else(|| {
+        HintError::CustomHint(
+            format!(
+                "Modular inverse does not exist for sum {} modulo {}",
+                sum_val, p.0
+            )
+            .into_boxed_str(),
+        )
+    })?;
+    let sum_inv = UInt384(sum_inv_val);
+
+    let sum_inv_addr =
+        get_relocatable_from_var_name("sum_inv_d0", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    sum_inv.to_memory(vm, sum_inv_addr)?;
+
+    Ok(())
+}
+
+pub const HINT_ADD_MUL_MOD_CIRCUIT: &str = r#"from starkware.cairo.lang.builtins.modulo.mod_builtin_runner import ModBuiltinRunner
+assert builtin_runners["add_mod_builtin"].instance_def.batch_size == 1
+assert builtin_runners["mul_mod_builtin"].instance_def.batch_size == 1
+
+ModBuiltinRunner.fill_memory(
+    memory=memory,
+    add_mod=(ids.add_mod_ptr.address_, builtin_runners["add_mod_builtin"], 1),
+    mul_mod=(ids.mul_mod_ptr.address_, builtin_runners["mul_mod_builtin"], 1),
+)"#;
+
+pub fn hint_add_mul_mod_circuit(
+    vm: &mut VirtualMachine,
+    _exec_scopes: &mut ExecutionScopes,
+    hint_data: &HintProcessorData,
+    _constants: &HashMap<String, Felt252>,
+) -> Result<(), HintError> {
+    let add_mod_ptr = get_ptr_from_var_name("add_mod_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+    let mul_mod_ptr = get_ptr_from_var_name("mul_mod_ptr", vm, &hint_data.ids_data, &hint_data.ap_tracking)?;
+
+    vm.mod_builtin_fill_memory(Some((add_mod_ptr, 1)), Some((mul_mod_ptr, 1)), Some(1))
+        .map_err(HintError::Internal)
+}
